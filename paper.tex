@@ -60,6 +60,7 @@
 
 \usepackage[all]{hypcap}
 \usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage{placeins}
 \usepackage[capitalise,nameinlink,noabbrev]{cleveref}
 
 \crefname{algocf}{Algorithm}{Algorithms}
@@ -800,7 +801,7 @@ substantially lower IAE than the best classical method (IMC-PID) across
 all perturbed conditions, demonstrating that the learned policy
 generalizes to off-nominal operating points.
 
-\begin{table}[t]
+\begin{table}[h]
   \caption{IAE Robustness to P1 Parameter Variations}
   \label{tab:robustness}
   \centering
@@ -897,6 +898,7 @@ Natural Science Foundation of China.
 % Bibliography
 % =====================================================================
 
+\FloatBarrier  % prevent all remaining floats from passing into the references
 \bibliographystyle{IEEEtranN}
 \bibliography{paper}
 
