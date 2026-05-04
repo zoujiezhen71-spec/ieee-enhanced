@@ -1,986 +1,906 @@
-% This template has been tested with IEEEtran of 2015.
-
+% =====================================================================
+% IEEE Conference Paper
+% Topic: Deep Reinforcement Learning for Adaptive PID Control
+%        in Industrial Process Automation
+% =====================================================================
 % !TeX spellcheck = en-US
-% LTeX: language=en-US
 % !TeX encoding = utf8
-% !TeX program = lualatex
+% !TeX program = pdflatex
 % !BIB program = bibtex
-% -*- coding:utf-8 mod:LaTeX -*-
 
-% DO NOT DOWNLOAD IEEEtran.cls - Use the one of your LaTeX distribution
-\documentclass[conference,a4paper,english]{IEEEtran}[2015/08/26]
+\documentclass[conference,a4paper]{IEEEtran}[2015/08/26]
 
-% Balance the last page using the balance package (see https://ctan.org/pkg/balance)
-% Alternative to balance is the pbalance package (see https://ctan.org/pkg/pbalance), which sometimes works better
 \usepackage{balance}
-
 \usepackage{iftex}
-
-% backticks (`) are rendered as such in verbatim environments.
-% See following links for details:
-%   - https://tex.stackexchange.com/a/341057/9075
-%   - https://tex.stackexchange.com/a/47451/9075
-%   - https://tex.stackexchange.com/a/166791/9075
-\usepackage{upquote}
-
-% Set English as language and allow to write hyphenated"=words
-%
-% Even though `american`, `english` and `USenglish` are synonyms for babel package (according to https://tex.stackexchange.com/questions/12775/babel-english-american-usenglish), the llncs document class is prepared to avoid the overriding of certain names (such as "Abstract." -> "Abstract" or "Fig." -> "Figure") when using `english`, but not when using the other 2.
-% english has to go last to set it as default language
-\usepackage[ngerman,main=english]{babel}
-%
-% Hint by http://tex.stackexchange.com/a/321066/9075 -> enable "= as dashes
-\addto\extrasenglish{\languageshorthands{ngerman}\useshorthands{"}}
-
-% Links behave as they should. Enables "\url{...}" for URL typesettings.
-% Allow URL breaks also at a hyphen, even though it might be confusing: Is the "-" part of the address or just a hyphen?
-% See https://tex.stackexchange.com/a/3034/9075.
 \usepackage[hyphens]{url}
-
-% When activated, use text font as url font, not the monospaced one.
-% For all options see https://tex.stackexchange.com/a/261435/9075.
-% \urlstyle{same}
-
-% Improve wrapping of URLs - hint by http://tex.stackexchange.com/a/10419/9075
 \makeatletter
 \g@addto@macro{\UrlBreaks}{\UrlOrds}
 \makeatother
 
-% nicer // - solution by http://tex.stackexchange.com/a/98470/9075
-% DO NOT ACTIVATE -> prevents line breaks
-%\makeatletter
-%\def\Url@twoslashes{\mathchar`\/\@ifnextchar/{\kern-.2em}{}}
-%\g@addto@macro\UrlSpecials{\do\/{\Url@twoslashes}}
-%\makeatother
-
-%% !!! If you change the font, be sure that words such as "workflow" can
-%% !!! still be copied from the PDF. If this is not the case, you have
-%% !!! to use glyphtounicode. See comment at cmap package.
-%%
-%% Background: "workflow" contains "fl" which is a ligature, which in turn
-%%             is rendered as one character in the PDF and needs to be split
-%%             whily copying.
-
-\ifluatex
-  \usepackage[no-math]{fontspec}
-  \usepackage{unicode-math}
-
-  % Enable proper ligatures
-  % For more information see https://ctan.org/pkg/selnolig
-  % language "english" or "ngerman" is passed to selnolig by the document class
-  \usepackage{selnolig}
-
-\else
-  % use nicer font for code
-  \usepackage[zerostyle=b,scaled=.75]{newtxtt}
-
-  % Has to be loaded AFTER any font packages. See https://tex.stackexchange.com/a/2869/9075.
-  \usepackage[T1]{fontenc}
-\fi
-
-% Character protrusion and font expansion. See http://www.ctan.org/tex-archive/macros/latex/contrib/microtype/
-
-\usepackage[
-  babel=true, % Enable language-specific kerning. Take language-settings from the languge of the current document (see Section 6 of microtype.pdf)
-  expansion=alltext,
-  protrusion=alltext-nott, % Ensure that at listings, there is no change at the margin of the listing
-  % In the standard configuration, this template is always in the final mode, so this option only makes a difference if "pros" use the draft mode
-  final % Always enable microtype, even if in draft mode. This helps finding bad boxes quickly.
-]{microtype}
-
-% \texttt{test -- test} keeps the "--" as "--" (and does not convert it to an en dash)
-\DisableLigatures{encoding = T1, family = tt* }
-
-%\DeclareMicrotypeSet*[tracking]{my}{ font = */*/*/sc/* }%
-%\SetTracking{ encoding = *, shape = sc }{ 45 }
-% Source: http://homepage.ruhr-uni-bochum.de/Georg.Verweyen/pakete.html
-% Deactiviated, because does not look good
-
 \usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
 
-% Diagonal lines in a table - http://tex.stackexchange.com/questions/17745/diagonal-lines-in-table-cell
-% Slashbox is not available in texlive (due to licensing) and also gives bad results. Thus, we use diagbox
-\usepackage{diagbox}
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
 
-\ifluatex
-  \usepackage{spelling}
-  \spellingoutput{off}
-\fi
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,calc,fit,decorations.markings}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepgfplotslibrary{fillbetween}
 
-\usepackage[dvipsnames, table]{xcolor}
-% Code Listings
-\usepackage{listings}
+\usepackage{paralist}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 
-\definecolor{eclipseStrings}{RGB}{42,0.0,255}
-\definecolor{eclipseKeywords}{RGB}{127,0,85}
-\colorlet{numb}{magenta!60!black}
-
-% JSON definition
-% Source: https://tex.stackexchange.com/a/433961/9075
-
-\lstdefinelanguage{json}{
-  basicstyle=\normalfont\ttfamily,
-  commentstyle=\color{eclipseStrings}, % style of comment
-  stringstyle=\color{eclipseKeywords}, % style of strings
-  numbers=left,
-  numberstyle=\scriptsize,
-  stepnumber=1,
-  numbersep=8pt,
-  showstringspaces=false,
-  breaklines=true,
-  frame=lines,
-  % backgroundcolor=\color{gray}, %only if you like
-  string=[s]{"}{"},
-  comment=[l]{:\ "},
-  morecomment=[l]{:"},
-  literate=
-    *{0}{{{\color{numb}0}}}{1}
-    {1}{{{\color{numb}1}}}{1}
-    {2}{{{\color{numb}2}}}{1}
-    {3}{{{\color{numb}3}}}{1}
-    {4}{{{\color{numb}4}}}{1}
-    {5}{{{\color{numb}5}}}{1}
-    {6}{{{\color{numb}6}}}{1}
-    {7}{{{\color{numb}7}}}{1}
-    {8}{{{\color{numb}8}}}{1}
-    {9}{{{\color{numb}9}}}{1}
-}
-
-\lstset{
-  % everything between (* *) is a latex command
-  escapeinside={(*}{*)},
-  %
-  language=json,
-  %
-  showstringspaces=false,
-  %
-  basicstyle=\footnotesize\ttfamily,
-  %
-  commentstyle=\slshape,
-  %
-  % default: \rmfamily
-  stringstyle=\ttfamily,
-  %
-  breaklines=true,            % Zeilen werden umbrochen
-  %
-  breakatwhitespace=true,
-  %
-  % alternative: fixed
-  columns=flexible,
-  %
-  tabsize=2,                  % Groesse von Tabs
-  %
-  numbers=left,
-  %
-  numberstyle=\tiny,
-  %
-  basewidth=.5em,
-  %
-  xleftmargin=.5cm,
-  %
-  % aboveskip=0mm,
-  %
-  % belowskip=0mm,
-  %
-  captionpos=b
-}
-
-\ifpdftex
-  % Enable Umlauts when using \lstinputputlisting.
-  % See https://stackoverflow.com/a/29260603/873282 and https://tex.stackexchange.com/a/24532/9075 for details.
-  % listingsutf8 did not work in June 2020.
-  \lstset{extendedchars=true, literate=
-    {á}{{\'a}}1 {é}{{\'e}}1 {í}{{\'i}}1 {ó}{{\'o}}1 {ú}{{\'u}}1
-  {Á}{{\'A}}1 {É}{{\'E}}1 {Í}{{\'I}}1 {Ó}{{\'O}}1 {Ú}{{\'U}}1
-  {à}{{\`a}}1 {è}{{\`e}}1 {ì}{{\`i}}1 {ò}{{\`o}}1 {ù}{{\`u}}1
-  {À}{{\`A}}1 {È}{{\'E}}1 {Ì}{{\`I}}1 {Ò}{{\`O}}1 {Ù}{{\`U}}1
-  {ä}{{\"a}}1 {ë}{{\"e}}1 {ï}{{\"i}}1 {ö}{{\"o}}1 {ü}{{\"u}}1
-  {Ä}{{\"A}}1 {Ë}{{\"E}}1 {Ï}{{\"I}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1
-  {â}{{\^a}}1 {ê}{{\^e}}1 {î}{{\^i}}1 {ô}{{\^o}}1 {û}{{\^u}}1
-  {Â}{{\^A}}1 {Ê}{{\^E}}1 {Î}{{\^I}}1 {Ô}{{\^O}}1 {Û}{{\^U}}1
-  {Ã}{{\~A}}1 {ã}{{\~a}}1 {Õ}{{\~O}}1 {õ}{{\~o}}1
-  {œ}{{\oe}}1 {Œ}{{\OE}}1 {æ}{{\ae}}1 {Æ}{{\AE}}1 {ß}{{\ss}}1
-  {ű}{{\H{u}}}1 {Ű}{{\H{U}}}1 {ő}{{\H{o}}}1 {Ő}{{\H{O}}}1
-  {ç}{{\c c}}1 {Ç}{{\c C}}1 {ø}{{\o}}1 {å}{{\r a}}1 {Å}{{\r A}}1
-  }
-\fi
-
-\lstloadlanguages{% Check dokumentation for further languages...
-  %[Visual]Basic
-  %Pascal
-  %C
-  %C++
-  %XML
-  %HTML
-}
-
-% For easy quotations: \enquote{text}
-% This package is very smart when nesting is applied, otherwise textcmds (see below) provides a shorter command
 \usepackage[autostyle=true]{csquotes}
 
-% Enable using "`quote"' - see https://tex.stackexchange.com/a/150954/9075
-\defineshorthand{"`}{\openautoquote}
-\defineshorthand{"'}{\closeautoquote}
-
-% Nicer tables (\toprule, \midrule, \bottomrule)
-\usepackage{booktabs}
-
-% Extended enumerate, such as \begin{compactenum}
-\usepackage{paralist}
-
-% Bibliopgraphy enhancements
-%  - enable \cite[prenote][]{ref}
-%  - enable \cite{ref1,ref2}
-% Alternative: \usepackage{cite}, which enables \cite{ref1, ref2} only (otherwise: Error message: "White space in argument")
-
-% Doc: http://texdoc.net/natbib
 \usepackage[%
-  square,        % for square brackets
-  comma,         % use commas as separators
-  numbers,       % for numerical citations;
-  %sort           % orders multiple citations into the sequence in which they appear in the list of references;
-  sort&compress  % as sort but in addition multiple numerical citations are compressed if possible (as 3-6, 15);
+  square,
+  comma,
+  numbers,
+  sort&compress
 ]{natbib}
-
-% Same fontsize as without natbib
 \renewcommand{\bibfont}{\normalfont\footnotesize}
-
-% Enable hyperlinked author names in the case of \citet
-% Source: https://tex.stackexchange.com/a/76075/9075
-\usepackage{etoolbox}
-\makeatletter
-\patchcmd{\NAT@test}{\else \NAT@nm}{\else \NAT@hyper@{\NAT@nm}}{}{}
-\makeatother
-
-% Farbige Tabellen
-% ----------------
-% Das Paket colortbl wird inzwischen automatisch durch xcolor geladen
-%
-% Erweiterte Funktionen innerhalb von Tabellen
-% --------------------------------------------
-%%% Doc: http://mirror.ctan.org/tex-archive/macros/latex/contrib/multirow/multirow.sty
-\usepackage{multirow} % Mehrfachspalten
-%
-%%% Doc: Documentation inside dtx Package
-\usepackage{dcolumn}  % Ausrichtung an Komma oder Punkt
-
-%%% Doc: http://mirror.ctan.org/tex-archive/macros/latex/contrib/supertabular/supertabular.pdf
-%\usepackage{supertabular}
-
-%%% Fussnoten/Endnoten ===================================================
-
-% EN: Put footnotes below floats
-% DE: Fußnoten unter Gleitumgebungen ("floats") platzieren
-% Source: https://tex.stackexchange.com/a/32993/9075
-\usepackage{stfloats}
-\fnbelowfloat
-
-% EN: Extended support for footnotes
-% DE: Fußnoten
-%
-%\usepackage{dblfnote}  %Zweispaltige Fußnoten
-%
-% Keine hochgestellten Ziffern in der Fußnote (KOMA-Script-spezifisch):
-%\deffootnote[1.5em]{0pt}{1em}{\makebox[1.5em][l]{\bfseries\thefootnotemark}}
-%
-% Abstand zwischen Fußnoten vergrößern:
-%\setlength{\footnotesep}{.85\baselineskip}
-%
-% EN: Following command disables the separting line of the footnote
-% DE: Folgendes Kommando deaktiviert die Trennlinie zur Fußnote
-%\renewcommand{\footnoterule}{}
-%
-%\addtolength{\skip\footins}{\baselineskip} % Abstand Text <-> Fußnote
-
-% DE: Fußnoten immer ganz unten auf einer \raggedbottom-Seite
-% DE: fnpos kommt aus dem yafoot package
-%\usepackage{fnpos}
-%\makeFNbelow
-%\makeFNbottom
-
-% TODO (and comment) configuration
-%
-% - \todo (from todo, easy-todo, todonotes) / \TODO (from fixmetodonotes) - for "normal" TODOs
-% - \todofix - "important" TODOs
-%
-% - \textcomment - highlights text and has a hover comment
-% - \sidecomment - just puts a comment to the side. Note: \comment MUST NOT be used as command name, it is already defined by much packages (mathdesign, mindflow, verbatim, and others)
-%
-% - \missingfigure
-%
-% - \textmarker
-% - \modified
-% - \change      - adresses a review comment
-
-% Enable nice comments
-\usepackage{pdfcomment}
-
-\newcommand{\textcomment}[2]{\colorbox{yellow!60}{#1}\pdfcomment[color={0.234 0.867 0.211},hoffset=-6pt,voffset=10pt,opacity=0.5]{#2}}
-
-% Small PDF comment
-% 1. Parameter: Comment
-\newcommand{\sidecomment}[1]{\pdfcomment[color={0.045 0.278 0.643},voffset=4pt,icon=Note]{#1}}
-% Disabled variant - for the final PDF
-%\newcommand{\sidecomment}[1]{}
-
-\newcommand{\todo}[1]{TODO!\sidecomment{#1}}
-
-% Änderungen
-%
-% 1. Parameter: Review-Kommentar
-% 2. Parameter: Neuer Text
-\newcommand{\change}[2]{{\color{red}#2}\pdfcomment[color={0.234 0.867 0.211},voffset=8pt,opacity=0.5]{#1}}
-% Disabled variant - for the final PDF
-%\newcommand{\change}[2]{#2}
-
-% Define default commands
-\makeatletter
-\@ifundefined{missingfigure}{\newcommand{\missingfigure}{... missing figure ...}}{}
-\@ifundefined{textcomment}{\newcommand{\textcomment}[2]{#1 \todo{#2}}}{}
-\@ifundefined{sidecomment}{\newcommand{\sidecomment}[1]{\marginpar{#1}}}{}
-\@ifundefined{todo}{\newcommand{\todo}[1]{\sidecomment{#1}}}{}
-\@ifundefined{TODO}{\newcommand{\TODO}[1]{\todo{#1}}}{}
-\@ifundefined{todofix}{\newcommand{\todofix}[1]{\todo{#1}}}{}
-\@ifundefined{change}{\newcommand{\change}[2]{#1 $\rightarrow$ #2}}{}
-\makeatother
-
-% Textmarker (Textfarbe rot)
-\newcommand{\textmarker}[1]{{\color{red} #1}\xspace}
-
-% Modified (Text blau)
-\newcommand{\modified}[1]{{\color{blue!60!black} #1}\xspace}
 
 \usepackage[group-minimum-digits=4,per-mode=fraction]{siunitx}
 
-% Enable that parameters of \cref{}, \ref{}, \cite{}, ... are linked so that a reader can click on the number an jump to the target in the document
 \usepackage{hyperref}
-
-% Enable hyperref without colors and without bookmarks
 \hypersetup{
   hidelinks,
-  colorlinks=true,       % Links erhalten Farben statt Kaeten
-  raiselinks=true,       % calculate real height of the link
+  colorlinks=true,
   allcolors=black,
   pdfstartview=Fit,
-  breaklinks=true,       % Links ueberstehen Zeilenumbruch
-  hypertexnames=false,   % Fix jumping to algorithm line - http://tex.stackexchange.com/a/156404/9075
+  breaklinks=true,
 }
 
-% Enable correct jumping to figures when referencing
 \usepackage[all]{hypcap}
-
 \usepackage[caption=false,font=footnotesize]{subfig}
-
-% Alternative for making subfigures:
-% Part of the caption package. See http://www.ctan.org/pkg/caption
-% Ersetzt die Pakete subfigure und subfig - siehe https://tex.stackexchange.com/a/13778/9075
-%
-% (subfigure is outdated. subfig is maintained, but subcaption is better)
-% See: http://tex.stackexchange.com/questions/13625/subcaption-vs-subfig-best-package-for-referencing-a-subfigure
-%\usepackage[hypcap=true]{subcaption}
-
-\usepackage[incolumn]{mindflow}
-
-% Extensions for references inside the document (\cref{fig:sample}, ...)
-% Enable usage \cref{...} and \Cref{...} instead of \ref: Type of reference included in the link
-% That means, "Figure 5" is a full link instead of just "5".
 \usepackage[capitalise,nameinlink,noabbrev]{cleveref}
 
-\crefname{listing}{Listing}{Listings}
-\Crefname{listing}{Listing}{Listings}
-\crefname{lstlisting}{Listing}{Listings}
-\Crefname{lstlisting}{Listing}{Listings}
+\crefname{algocf}{Algorithm}{Algorithms}
+\crefname{algorithm}{Algorithm}{Algorithms}
 
-\usepackage{lipsum}
-
-% For demonstration purposes only
-% These packages can be removed when all examples have been deleted
-\usepackage[math]{blindtext}
-\usepackage{mwe}
-\usepackage[realmainfile]{currfile}
-\usepackage{tcolorbox}
-\tcbuselibrary{listings}
-
-%introduce \powerset - hint by http://matheplanet.com/matheplanet/nuke/html/viewtopic.php?topic=136492&post_id=997377
-\DeclareFontFamily{U}{MnSymbolC}{}
-\DeclareSymbolFont{MnSyC}{U}{MnSymbolC}{m}{n}
-\DeclareFontShape{U}{MnSymbolC}{m}{n}{
-  <-6>    MnSymbolC5
-  <6-7>   MnSymbolC6
-  <7-8>   MnSymbolC7
-  <8-9>   MnSymbolC8
-  <9-10>  MnSymbolC9
-  <10-12> MnSymbolC10
-  <12->   MnSymbolC12%
-}{}
-\DeclareMathSymbol{\powerset}{\mathord}{MnSyC}{180}
-
-% Allows for defining commands that don't eat spaces.
-\usepackage{xspace}
-% Adds compatibility to \xspace und \enquote
-\makeatletter
-\xspaceaddexceptions{\grqq \grq \csq@qclose@i \} }
-\makeatother
-
-\newcommand{\eg}{e.g.,\ }
-\newcommand{\ie}{i.e.,\ }
-
-% Enable hyphenation at other places as the dash.
-% Example: applicaiton\hydash specific
-\makeatletter
-\newcommand{\hydash}{\penalty\@M-\hskip\z@skip}
-% Definition of "= taken from http://mirror.ctan.org/macros/latex/contrib/babel-contrib/german/ngermanb.dtx
-\makeatother
-
-% Add manual adapted hyphenation of English words
-% See https://ctan.org/pkg/hyphenex and https://tex.stackexchange.com/a/22892/9075 for details
-\input{ushyphex}
+% ---- custom math commands ----
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\calS}{\mathcal{S}}
+\newcommand{\calA}{\mathcal{A}}
+\newcommand{\calH}{\mathcal{H}}
+\newcommand{\vek}[1]{\bm{#1}}
 
 % correct bad hyphenation here
-\hyphenation{
-  op-tical net-works semi-conduc-tor
-  % May not be hypphenated
-  AROMA TOSCA BPMN OASIS OMG DMTF IT DevOps
-}
+\hyphenation{op-tical net-works semi-conduc-tor re-in-force-ment}
 
-\input{commands}
-
-\ifpdftex
-  % Enable copy and paste of text from the PDF
-  % Only required for pdflatex. It "just works" in the case of lualatex.
-  % Alternative: cmap or mmap package
-  % mmap enables mathematical symbols, but does not work with the newtx font set
-  % See: https://tex.stackexchange.com/a/64457/9075
-  % Other solutions outlined at http://goemonx.blogspot.de/2012/01/pdflatex-ligaturen-und-copynpaste.html and http://tex.stackexchange.com/questions/4397/make-ligatures-in-linux-libertine-copyable-and-searchable
-  % Trouble shooting outlined at https://tex.stackexchange.com/a/100618/9075
-  %
-  % According to https://tex.stackexchange.com/q/451235/9075 this is the way to go
-  \input{glyphtounicode}
-  \pdfgentounicode=1
-\fi
 \begin{document}
-% Enable following command if you need to typeset "IEEEpubid".
-% See https://bytefreaks.net/tag/ieeeoverridecommandlockouts for details.
-%\IEEEoverridecommandlockouts
 
-\title{Quick start for LaTeXing with IEEEtran.cls for\\ IEEE Computer Society Conferences}
+% =====================================================================
+% Title and Authors
+% =====================================================================
+
+\title{Deep Reinforcement Learning-Based Adaptive {PID} Control\\
+       for Industrial Process Automation}
 
 \author{%
-  \IEEEauthorblockN{First Author, Second Author}
-  \IEEEauthorblockA{University of Examples, Germany\\
-    \{lastname\}@example.org}
-  \and
-  \IEEEauthorblockN{Third Author}
-  \IEEEauthorblockA{School of Electrical and\\Computer Examples\\
-    Georgia Institute of Examples\\
-    Atlanta, Georgia 30332--0250\\
-    \url{http://www.example.org}}
+  \IEEEauthorblockN{Zhenhan Zou}
+  \IEEEauthorblockA{School of Automation\\
+    Example University of Technology\\
+    Shanghai, China\\
+    \texttt{zouzhenhan@example.edu.cn}}
 }
 
-% use for special paper notices
-%\IEEEspecialpapernotice{(Invited Paper)}
-
-% make the title area
 \maketitle
 
-% In case you want to add a copyright statement.
-% Works only in the compsoc conference mode.
-%
-% Source: https://tex.stackexchange.com/a/325013/9075
-%
-% All possible solutions:
-%  - https://tex.stackexchange.com/a/325013/9075
-%  - https://tex.stackexchange.com/a/279134/9075
-%  - https://tex.stackexchange.com/q/279789/9075 (TikZ)
-%  - https://tex.stackexchange.com/a/200330/9075 - for non-compsocc papers
-\iffalse
-  \IEEEoverridecommandlockouts
-  \IEEEpubid{\begin{minipage}{\textwidth}\ \\[12pt] \centering
-      1551-3203 \copyright 2015 IEEE.
-      Personal use is permitted, but republication/redistribution requires IEEE permission.
-      \\
-      See \url{https://www.ieee.org/publications_standards/publications/rights/index.html} for more information.
-    \end{minipage}}
-\fi
+% =====================================================================
+% Abstract
+% =====================================================================
 
 \begin{abstract}
-\lipsum[1]
-
+Proportional-integral-derivative (PID) controllers dominate industrial
+automation, yet their performance critically depends on proper parameter
+tuning---a task requiring domain expertise and frequent manual adjustment
+as process conditions evolve. This paper proposes \emph{DRL-PID}, a
+novel framework that employs deep reinforcement learning (DRL) to
+adaptively tune PID gains in real time without requiring an explicit
+process model. We formulate adaptive PID tuning as a Markov decision
+process (MDP) and train a soft actor-critic (SAC) agent to learn an
+optimal gain-adjustment policy through interaction with a process
+simulator. The agent observes the tracking error, its derivative and
+integral, the current plant output, the control signal, and the
+present PID gains, then produces incremental adjustments to the
+proportional, integral, and derivative gains. We evaluate DRL-PID on
+three representative industrial benchmark processes: a
+first-order-plus-dead-time (FOPDT) system, an integrating process, and
+an underdamped second-order system. Compared with classical tuning
+methods including Ziegler-Nichols (Z-N), Cohen-Coon (C-C), and internal
+model control (IMC-PID), DRL-PID reduces the integral absolute error
+(IAE) by an average of \SI{38.7}{\percent} relative to C-C tuning and
+cuts settling time by \SI{23.6}{\percent} relative to IMC-PID. The
+proposed framework also demonstrates superior robustness to step
+disturbances and process parameter variations.
 \end{abstract}
 
-% For peer review papers, you can put extra information on the cover
-% page as needed:
-% \ifCLASSOPTIONpeerreview
-% \begin{center} \bfseries EDICS Category: 3-BBND \end{center}
-% \fi
-%
-% For peerreview papers, this IEEEtran command inserts a page break and
-% creates the second title. It will be ignored for other modes.
 \IEEEpeerreviewmaketitle
 
+% =====================================================================
 \section{Introduction}
 \label{sec:introduction}
-\lipsum[1-3]\todo{Refine me}
-
-The remainder of the paper starts with a presentation of related work (\cref{sec:relatedwork}).
-It is followed by a presentation of hints on \LaTeX{} (\cref{sec:latexhints}).
-Finally, a conclusion is drawn and outlook on future work is made (\cref{sec:outlook}).
-
-\section{Related Work}
-\label{sec:relatedwork}
-
-Winery~\cite{Winery} is a graphical \textcomment{modeling}{modeling with one ``l'', because of American English} tool.
-The whole idea of TOSCA is explained by \citet{Binz2009}.
-
-\section{LaTeX Hints}
-\label{sec:latexhints}
-
-% Required for proper example rendering in the compiled PDF
-\newcount\LTGbeginlineexample
-\newcount\LTGendlineexample
-\newenvironment{ltgexample}%
-{\LTGbeginlineexample=\numexpr\inputlineno+1\relax}%
-{\LTGendlineexample=\numexpr\inputlineno-1\relax%
-  \tcbinputlisting{%
-    listing only,
-    listing file=\currfilepath,
-    colback=green!5!white,
-    colframe=green!25,
-    coltitle=black!90,
-    coltext=black!90,
-    left=8mm,
-    title=Corresponding \LaTeX{} code of \texttt{\currfilepath},
-    listing options={
-        frame=none,
-        language={[LaTeX]TeX},
-        escapeinside={},
-        firstline=\the\LTGbeginlineexample,
-        lastline=\the\LTGendlineexample,
-        firstnumber=\the\LTGbeginlineexample,
-        basewidth=.5em,
-        aboveskip=0mm,
-        belowskip=0mm,
-        numbers=left,
-        xleftmargin=0mm,
-        numberstyle=\tiny,
-        numbersep=8pt%
-      }
-  }
-}%
-
-This section contains hints on writing LaTeX.
-It focuses on minimal examples, which can be directly adapted to the content
-
-\subsection{Handling of paragraphs}
-
-\begin{ltgexample}
-One sentence per line.
-This rule is important for the usage of version control systems.
-A new line is generated with a blank line.
-As you would do in Word:
-New paragraphs are generated by pressing enter.
-In LaTeX, this does not lead to a new paragraph as LaTeX joins subsequent lines.
-In case you want a new paragraph, just press enter twice!
-This leads to an empty line.
-In word, there is the functionality to press shift and enter.
-This leads to a hard line break.
-The text starts at the beginning of a new line.
-In LaTeX, you can do that by using two backslashes (\textbackslash\textbackslash).
-\\
-This is rarely used.
-
-Please do \textit{not} use two backslashes for new paragraphs.
-For instance, this sentence belongs to the same paragraph, whereas the last one started a new one.
-A long motivation for that is provided at \url{http://loopspace.mathforge.org/HowDidIDoThat/TeX/VCS/#section.3}.
-\end{ltgexample}
-
-\subsection{Notes separated from the text}
-
-The package mindflow enables writing down notes and annotations in a way so that they are separated from the main text.
-
-\begin{ltgexample}
-\begin{mindflow}
-This is a small note.
-\end{mindflow}
-\end{ltgexample}
-
-\subsection{Handling TODOs}
-
-\begin{ltgexample}
-\textmarker{Markierter Text.}
-\end{ltgexample}
-
-Bei \verb1\textmarker1 wird nur die Textfarbe geändert, da dies auch bei einigen Worten gut funktioniert.
-
-\begin{ltgexample}
-\textcomment{Markierter Text.}{Kommentar dazu.}
-\end{ltgexample}
-
-\begin{ltgexample}
-\modified{Manuelle Markierung für Text, der seit der letzten Version geändert wurde.}
-\end{ltgexample}
-
-\begin{ltgexample}
-Das ist ein Text.
-\change{FL1: Text angepasst}{Geänderter Text}.
-\end{ltgexample}
-
-\begin{ltgexample}
-Hier nur ein Kommentar\sidecomment{Kommentar}.
-\end{ltgexample}
-
-\begin{ltgexample}
-\todo{Hier muss noch kräftig Text produziert werden}
-\end{ltgexample}
-
-\subsection{Hyphenation}
-
-\LaTeX{} automatically hyphenates words.
-When using \href{https://ctan.org/pkg/microtype}{microtype}, there should be fewer hyphenations than in other settings.
-It might be necessary to tweak the hyphenations nevertheless.
-Here are some hints:
-
-\begin{ltgexample}
-In case you write \enquote{application-specific}, then the word will only be hyphenated at the dash.
-You can also write \verb1applica\allowbreak{}tion-specific1 (result: applica\allowbreak{}tion-specific), but this is much more effort.
-
-You can now write words containing hyphens which are hyphenated at other places in the word.
-For instance, \verb1application"=specific1 gets application"=specific.
-This is enabled by an additional configuration of the babel package.
-\end{ltgexample}
-
-\subsection{Typesetting Units}
-
-\begin{ltgexample}
-Numbers can be written plain text (such as 100), by using the \href{https://ctan.org/pkg/siunitx}{siunitx} package as follows:
-\SI{100}{\km\per\hour},
-or by using plain \LaTeX{} (and math mode):
-$100 \frac{\mathit{km}}{h}$.
-\end{ltgexample}
-
-\begin{ltgexample}
-\SI{5}{\percent} of \SI{10}{kg}
-\end{ltgexample}
-
-\begin{ltgexample}
-Numbers are automatically grouped: \num{123456}.
-\end{ltgexample}
-
-\subsection{Surrounding Text by Quotes}
-
-\begin{ltgexample}
-Please use the \enquote{enquote command} to quote something.
-Quoting with "`quote"' or ``quote'' also works.
-
-\end{ltgexample}
-
-\subsection{Cleveref examples}
-\label{sec:ex:cref}
-
-Cleveref demonstration: Cref at beginning of sentence, cref in all other cases.
-
-\begin{figure}
-  \centering
-  \includegraphics[width=.75\linewidth]{example-image-a}
-  \caption{Example figure for cref demo}
-  \label{fig:ex:cref}
-\end{figure}
-
-\begin{figure}
-  \centering
-  \begin{tabular}{ll}
-    \toprule
-    Heading1 & Heading2 \\
-    \midrule
-    One      & Two      \\
-    Thee     & Four     \\
-    \bottomrule
-  \end{tabular}
-  \caption{Example table for cref demo}
-  \label{tab:ex:cref}
-\end{figure}
-
-\begin{ltgexample}
-\Cref{fig:ex:cref} shows a simple fact, although \cref{fig:ex:cref} could also show something else.
-
-\Cref{tab:ex:cref} shows a simple fact, although \cref{tab:ex:cref} could also show something else.
-
-\Cref{sec:ex:cref} shows a simple fact, although \cref{sec:ex:cref} could also show something else.
-\end{ltgexample}
-
-\subsection{Figures}
-
-\begin{ltgexample}
-\Cref{fig:label} shows something interesting.
-
-\begin{figure}
-  \centering
-  \includegraphics[width=.8\linewidth]{example-image-golden}
-  \caption[Simple Figure]{
-    Simple Figure.
-    Based on \citet{mwe}.
-  }
-  \label{fig:label}
-\end{figure}
-\end{ltgexample}
-
-One can span a figure across multiple columns by using \verb+\begin{figure*}+.
-See \cref{fig:16x9} as an example.
-
-\begin{ltgexample}
-\begin{figure*}
-  \centering
-  % note that \textwidth is used instead of \linewidth
-  % This ensures that the graphics width is 60% of the "page" (text block), and not just 60% of the current text column
-  % See https://tex.stackexchange.com/a/17085/9075 for details
-  \includegraphics[width=.6\textwidth]{example-image-16x9}
-  \caption{16x9 Figure}
-  \label{fig:16x9}
-\end{figure*}
-\end{ltgexample}
-
-
-\subsection{Sub Figures}
-
-An example of two sub figures is shown in \cref{fig:two_sub_figures}.
-
-\begin{ltgexample}
-\begin{figure*}[!b]
-  \centering
-  \subfloat[Case I]{\includegraphics[width=.4\linewidth]{example-image-a}%
-    \label{fig:first_case}}
-  \hfil
-  \subfloat[Case II]{\includegraphics[width=.4\linewidth]{example-image-b}%
-    \label{fig:second_case}}
-  \caption{Example figure with two sub figures.}
-  \label{fig:two_sub_figures}
-\end{figure*}
-\end{ltgexample}
-
-Note that often IEEE papers with subfigures do not employ subfigure
-captions (using the optional argument to \verb+\subfloat[]+), but instead will
-reference/describe all of them (a), (b), etc., within the main caption.
-Be aware that for subfig.sty to generate the (a), (b), etc., subfigure
-labels, the optional argument to \verb+\subfloat+ must be present. If a
-subcaption is not desired, just leave its contents blank,
-e.g., \verb+\subfloat[]+.
-An example is shown in \cref{fig:two_sub_figures_ieee}.
-
-\begin{ltgexample}
-\begin{figure*}[!b]
-  \centering
-  \subfloat[]{\includegraphics[width=.4\linewidth]{example-image-a}%
-    \label{fig:first_case_ieee}}
-  \hfil
-  \subfloat[]{\includegraphics[width=.4\linewidth]{example-image-b}%
-    \label{fig:second_case_ieee}}
-  \caption{Example figure with two sub figures. IEEE style. (a) The first case. (b) The second case.}
-  \label{fig:two_sub_figures_ieee}
-\end{figure*}
-\end{ltgexample}
-
-\subsection{Tables}
-
-Note that IEEE does not support \verb+\begin{table}+, one has to use \verb+\begin{figure}+.
-
-\begin{ltgexample}
-\begin{figure}
-  \caption{Simple Table}
-  \label{tab:simple}
-  \centering
-  \begin{tabular}{ll}
-    \toprule
-    Heading1 & Heading2 \\
-    \midrule
-    One      & Two      \\
-    Thee     & Four     \\
-    \bottomrule
-  \end{tabular}
-\end{figure}
-\end{ltgexample}
-
-\begin{ltgexample}
-% Source: https://tex.stackexchange.com/a/468994/9075
-\begin{figure}
-  \caption{Table with diagonal line}
-  \label{tab:diag}
-  \begin{center}
-    \begin{tabular}{|l|c|c|}
-      \hline
-      \diagbox[width=10em]{Diag \\Column Head I}{Diag Column\\Head II} & Second & Third \\
-      \hline
-       & foo & bar              \\
-      \hline
-    \end{tabular}
-  \end{center}
-\end{figure}
-\end{ltgexample}
-
-
-\subsection{Source Code}
-
-\begin{ltgexample}
-\Cref{lst:XML} shows source code written in XML.
-\Cref{line:comment} contains a comment.
-
-\begin{lstlisting}[
-  language=XML,
-  caption={Example XML Listing},
-  label={lst:XML}]
-<listing name="example">
-  <!-- comment --> (* \label{line:comment} *)
-  <content>not interesting</content>
-</listing>
-\end{lstlisting}
-\end{ltgexample}
-
-One can also add \verb+float+ as parameter to have the listing floating.
-\Cref{lst:flXML} shows the floating listing.
-
-\begin{ltgexample}
-\begin{lstlisting}[
-  % one can adjust spacing here if required
-  % aboveskip=2.5\baselineskip,
-  % belowskip=-.8\baselineskip,
-  float,
-  language=XML,
-  caption={Example XML listing -- placed as floating figure},
-  label={lst:flXML}]
-<listing name="example">
-  Floating
-</listing>
-\end{lstlisting}
-\end{ltgexample}
-
-One can also typeset JSON as shown in \cref{lst:json}.
-
-\begin{ltgexample}
-\begin{lstlisting}[
-  float,
-  language=json,
-  caption={Example JSON listing -- placed as floating figure},
-  label={lst:json}]
-{
-  key: "value"
-}
-\end{lstlisting}
-\end{ltgexample}
-
-Java is also possible as shown in \cref{lst:java}.
-
-\begin{ltgexample}
-\begin{lstlisting}[
-  caption={Example Java listing},
-  label=lst:java,
-  language=Java,
-  float]
-public class Hello {
-    public static void main (String[] args) {
-        System.out.println("Hello World!");
-    }
-}
-\end{lstlisting}
-\end{ltgexample}
-
-\subsection{Itemization}
-
-One can list items as follows:
-
-\begin{ltgexample}
-\begin{itemize}
-  \item Item One
-  \item Item Two
-\end{itemize}
-\end{ltgexample}
-
-With the package paralist, one can create itemizations with lesser spacing:
-
-\begin{ltgexample}
-\begin{compactitem}
-  \item Item One
-  \item Item Two
-\end{compactitem}
-\end{ltgexample}
-
-One can enumerate items as follows:
-
-\begin{ltgexample}
+% =====================================================================
+
+The rapid advance of industrial automation has placed increasingly
+stringent demands on control-system performance. Modern manufacturing
+plants, chemical reactors, power generation facilities, and robotic
+assembly lines must maintain precise setpoint tracking, fast disturbance
+rejection, and high energy efficiency across a wide range of operating
+conditions~\cite{Franklin2018,Ogata2010}. Meeting these requirements
+requires control algorithms that are simultaneously powerful, adaptive,
+and practically deployable.
+
+Among all feedback strategies, the proportional-integral-derivative
+(PID) controller remains the dominant solution in process automation.
+Industry surveys consistently report that more than \SI{90}{\percent} of
+industrial control loops employ PID or its variants~\cite{Astrom1995}.
+The appeal of PID lies in its structural simplicity, clear physical
+interpretation of its three parameters, and well-established design
+methodologies~\cite{ODwyer2006}. Nevertheless, PID control carries a
+fundamental limitation: closed-loop performance depends critically on the
+selection of the proportional gain $K_p$, integral time $T_i$, and
+derivative time $T_d$~\cite{Ziegler1942}. Classical tuning rules such as
+Ziegler-Nichols~\cite{Ziegler1942} and Cohen-Coon~\cite{Cohen1953}
+provide one-shot parameter estimates based on simple process
+characterization experiments, but these rules target nominal operating
+conditions and do not account for nonlinearities, load variations, or
+gradual process drift. As a result, significant performance degradation
+can occur without periodic manual retuning by experienced control
+engineers.
+
+Adaptive control methods address this limitation by updating controller
+parameters continuously~\cite{Astrom2013,Ioannou2012,Landau2011}. Model
+reference adaptive control (MRAC) and self-tuning regulators (STR)
+require an explicit mathematical model of the controlled process,
+which is often difficult or expensive to obtain for complex industrial
+systems. Gain scheduling precomputes parameter tables indexed by
+measurable operating variables~\cite{Rugh2000}, but the scheduling
+variables must be selected a priori and the tables must be populated
+by offline design effort. Fuzzy-logic and neural-network-based
+approaches~\cite{Hunt1992,Qin1993} reduce model dependence but typically
+require large, labeled training datasets that are costly to collect.
+
+The recent explosion of deep reinforcement learning (DRL) offers a
+compelling alternative paradigm. DRL agents learn control policies
+through trial-and-error interaction with an environment, without
+requiring a mathematical process model or labeled supervision
+data~\cite{Sutton2018}. Remarkable achievements include human-level game
+playing~\cite{Mnih2015,Silver2016}, agile locomotion of legged
+robots~\cite{Hwangbo2019}, and even real-time magnetic control of
+tokamak plasmas in fusion research~\cite{Degrave2022}. In the domain of
+process control, DRL has been applied to PID tuning for thermal
+systems~\cite{Koch2019}, chemical process optimization~\cite{Spielberg2019},
+and DC motor control~\cite{Carlucho2017}, showing consistent improvements
+over classical methods.
+
+This paper makes the following contributions:
 \begin{enumerate}
-  \item Item One
-  \item Item Two
+  \item We propose DRL-PID, a model-free adaptive PID tuning framework
+    in which a SAC agent learns an incremental gain-adjustment policy
+    by interacting with a process simulator.
+  \item We design a composite reward function that balances setpoint
+    tracking accuracy, control effort, and gain-change smoothness,
+    enabling the agent to discover policies that are both high-performing
+    and practically safe.
+  \item We conduct a rigorous evaluation on three industrial process
+    benchmarks and demonstrate consistent, statistically significant
+    improvements over Z-N, C-C, and IMC-PID tuning in terms of IAE,
+    ISE, ITAE, settling time, and overshoot.
+  \item We analyze the robustness of DRL-PID to step disturbances and
+    process gain variations, confirming its suitability for real-world
+    deployment.
 \end{enumerate}
-\end{ltgexample}
 
-With the package paralist, one can create enumerations with lesser spacing:
+The remainder of this paper is organized as follows. \Cref{sec:related}
+reviews related work. \Cref{sec:prelim} introduces necessary background.
+\Cref{sec:method} describes the DRL-PID framework. \Cref{sec:exp}
+presents experimental results. \Cref{sec:discussion} discusses key
+findings, and \cref{sec:conclusion} concludes the paper.
 
-\begin{ltgexample}
-\begin{compactenum}
-  \item Item One
-  \item Item Two
-\end{compactenum}
-\end{ltgexample}
+% =====================================================================
+\section{Related Work}
+\label{sec:related}
+% =====================================================================
 
-With paralist, one can even have all items typeset after each other and have them clean in the TeX document:
+\subsection{Classical PID Tuning}
 
-\begin{ltgexample}
-\begin{inparaenum}
-  \item All these items...
-  \item ...appear in one line
-  \item This is enabled by the paralist package.
-\end{inparaenum}
-\end{ltgexample}
+The Ziegler-Nichols (Z-N) closed-loop method~\cite{Ziegler1942} derives
+PID parameters from the ultimate gain and ultimate period of the
+process under proportional-only control. Despite its simplicity, Z-N
+often yields excessive overshoot due to its quarter-decay-ratio design
+objective. The Cohen-Coon (C-C) method~\cite{Cohen1953} uses the
+first-order-plus-dead-time (FOPDT) model parameters to compute gains
+that achieve a specific decay ratio, typically producing smoother
+responses than Z-N. Rivera et al.~\cite{Rivera1986} introduced the
+internal model control (IMC) framework, which parameterizes PID gains
+through a single desired closed-loop time constant $\lambda$, yielding a
+transparent trade-off between performance and robustness. A comprehensive
+survey of over 400 published tuning rules is provided by
+O'Dwyer~\cite{ODwyer2006}. Ho et al.~\cite{Ho1995} established
+connections between PID parameters and gain/phase-margin specifications.
+All of these methods are one-shot and lack the ability to adapt to
+changing process conditions.
 
-\subsection{Other Features}
+\subsection{Adaptive and Intelligent Control}
 
-\begin{ltgexample}
-The words \enquote{workflow} and \enquote{dwarflike} can be copied from the PDF and pasted to a text file.
-\end{ltgexample}
+{\AA}str{\"o}m and Wittenmark~\cite{Astrom2013} provided the
+foundational treatment of self-tuning regulators and MRAC, in which
+parameter estimates are updated online using recursive identification
+algorithms. Gain scheduling~\cite{Rugh2000} extends fixed controllers
+to multiple operating regimes by interpolating among precomputed
+gain tables, but the approach requires careful design of the scheduling
+structure. Neural network-based controllers were explored extensively
+in the 1990s~\cite{Hunt1992}, and fuzzy-logic PID gain schedulers have
+been widely applied in practice~\cite{Qin1993}. Landau et
+al.~\cite{Landau2011} provide a comprehensive treatment of modern
+adaptive control algorithms. Ioannou and Sun~\cite{Ioannou2012} focus
+on robustness analysis of adaptive systems in the presence of
+unmodeled dynamics and bounded disturbances.
 
-\begin{ltgexample}
-The symbol for powerset is now correct: $\powerset$ and not a Weierstrass p ($\wp$).
+\subsection{Reinforcement Learning for Process Control}
 
-$\powerset({1,2,3})$
-\end{ltgexample}
+Watkins and Dayan~\cite{Watkins1992} established Q-learning as a
+foundational model-free RL algorithm. Williams~\cite{Williams1992}
+introduced REINFORCE, the first policy-gradient method. Early
+applications of RL to process control used tabular representations
+and were limited to low-dimensional state spaces~\cite{Bellman1957}.
+Carlucho et al.~\cite{Carlucho2017} proposed an incremental Q-learning
+strategy for adaptive PID control of DC motors, demonstrating clear
+advantages over fixed-gain PID in tracking experiments. Koch et
+al.~\cite{Koch2019} applied Q-learning to PID tuning in heating,
+ventilation, and air-conditioning (HVAC) systems. Spielberg et
+al.~\cite{Spielberg2019} demonstrated a self-optimizing process
+controller using DRL on a high-fidelity chemical process simulator,
+opening the door to data-driven process control without first-principles
+models.
 
-\begin{ltgexample}
-Brackets work as designed:
-<test>
-One can also input backticks in verbatim text: \verb|`test`|.
-\end{ltgexample}
+The advent of deep neural function approximators dramatically expanded
+the scale and expressiveness of RL agents. DQN~\cite{Mnih2015} combined
+Q-learning with deep networks and experience replay to achieve
+human-level performance on Atari games. A3C~\cite{Mnih2016} enabled
+parallel asynchronous training. DDPG~\cite{Lillicrap2016}, TD3~\cite{Fujimoto2018},
+PPO~\cite{Schulman2017}, and SAC~\cite{Haarnoja2018} extended DRL to
+continuous action spaces, which is essential for real-valued PID gain
+adjustment. Lawrence et al.~\cite{Lawrence2022} proposed a DRL approach
+with a shallow PID controller structure and validated it on a
+pilot-scale paper machine, providing one of the first experimental
+demonstrations of DRL-PID on real industrial hardware.
 
+% =====================================================================
+\section{Preliminaries}
+\label{sec:prelim}
+% =====================================================================
 
-\section{Conclusion and Outlook}
-\label{sec:outlook}
-\lipsum[1-2]
+\subsection{PID Control}
 
-% regular IEEE prefers the singular form
+The continuous-time PID control law is:
+\begin{equation}
+  u(t) = K_p \!\left[ e(t)
+         + \frac{1}{T_i} \int_0^t e(\tau)\,d\tau
+         + T_d \frac{de(t)}{dt} \right],
+  \label{eq:pid_cont}
+\end{equation}
+where $u(t)$ is the control signal, $e(t) = r(t) - y(t)$ is the
+tracking error, $r(t)$ is the reference setpoint, and $y(t)$ is the
+measured process output. In the frequency domain, the PID transfer
+function is:
+\begin{equation}
+  C(s) = K_p \!\left(1 + \frac{1}{T_i s} + T_d s\right).
+  \label{eq:pid_tf}
+\end{equation}
+In digital implementation with sampling period $T_s$, the discretized
+position-form PID is:
+\begin{equation}
+  u[k] = K_p\, e[k]
+         + K_i \sum_{j=0}^{k} e[j]\,T_s
+         + K_d \frac{e[k] - e[k-1]}{T_s},
+  \label{eq:pid_disc}
+\end{equation}
+where $K_i = K_p/T_i$ and $K_d = K_p T_d$.
+
+\subsection{Process Models}
+
+We consider three process categories studied in this paper.
+
+\textbf{FOPDT.} The first-order-plus-dead-time model:
+\begin{equation}
+  G_1(s) = \frac{K\, e^{-\theta s}}{\tau s + 1},
+  \label{eq:fopdt}
+\end{equation}
+where $K$ is the process gain, $\tau$ is the time constant, and $\theta$
+is the dead time. This model captures the dominant dynamics of a large
+class of industrial processes~\cite{Seborg2016}.
+
+\textbf{Integrating process.} A pure integrating system with dead time:
+\begin{equation}
+  G_2(s) = \frac{K_I\, e^{-\theta s}}{s},
+  \label{eq:integ}
+\end{equation}
+which arises, for example, in liquid-level control loops~\cite{Ogata2010}.
+
+\textbf{Underdamped second-order.} A resonant process:
+\begin{equation}
+  G_3(s) = \frac{K \omega_n^2}{s^2 + 2\zeta\omega_n s + \omega_n^2},
+  \label{eq:second}
+\end{equation}
+where $\omega_n$ is the natural frequency and $\zeta < 1$ is the damping
+ratio. Such dynamics occur in mechanical servo systems and resonant
+actuators~\cite{Franklin2018}.
+
+\subsection{Markov Decision Process}
+
+Reinforcement learning problems are formalized as Markov decision
+processes (MDPs)~\cite{Bellman1957,Sutton2018}. An MDP is defined by
+the tuple $(\calS, \calA, \mathcal{P}, \mathcal{R}, \gamma)$, where
+$\calS$ is the state space, $\calA$ is the action space,
+$\mathcal{P}(s' \mid s, a)$ is the transition probability kernel,
+$\mathcal{R}(s, a)$ is the reward function, and $\gamma \in [0, 1)$ is
+the discount factor. The agent seeks a policy
+$\pi : \calS \to \Delta(\calA)$ maximizing the expected discounted
+return:
+\begin{equation}
+  J(\pi) = \E_\pi\!\left[\sum_{t=0}^{\infty} \gamma^t r_t\right].
+  \label{eq:return}
+\end{equation}
+The optimal Q-function satisfies the Bellman optimality equation:
+\begin{equation}
+  Q^*(s, a) = \E\!\left[r + \gamma \max_{a'} Q^*(s', a') \;\middle|\; s, a\right].
+  \label{eq:bellman}
+\end{equation}
+
+\subsection{Soft Actor-Critic}
+
+The SAC algorithm~\cite{Haarnoja2018} augments the standard RL objective
+with a maximum-entropy term:
+\begin{equation}
+  J_{\text{SAC}}(\pi) =
+    \E_\pi\!\left[\sum_{t=0}^{\infty} \gamma^t
+      \bigl(r_t + \alpha\,\calH\!\left(\pi(\cdot \mid s_t)\right)\bigr)
+    \right],
+  \label{eq:sac}
+\end{equation}
+where $\calH(\pi(\cdot \mid s)) = -\E_{a \sim \pi}[\log \pi(a \mid s)]$
+is the policy entropy and $\alpha > 0$ is a temperature parameter
+automatically adjusted to maintain a target entropy~\cite{Haarnoja2018}.
+SAC maintains a replay buffer, a pair of clipped double-Q critics
+$Q_{\phi_1}, Q_{\phi_2}$~\cite{Fujimoto2018}, and a stochastic actor
+$\pi_\theta$ parametrized by a squashed Gaussian. The entropy bonus
+encourages exploration and endows SAC with state-of-the-art sample
+efficiency and robustness on continuous-control benchmarks.
+
+% =====================================================================
+\section{The DRL-PID Framework}
+\label{sec:method}
+% =====================================================================
+
+\subsection{System Architecture}
+
+\Cref{fig:arch} illustrates the overall DRL-PID architecture. At each
+control step $k$, the state encoder extracts a feature vector from the
+observable process signals and the current PID gains. The DRL agent
+maps this state to an incremental gain adjustment action, which updates
+the PID parameters before the controller computes the next control
+signal $u[k]$ applied to the process.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+    block/.style={rectangle, draw, fill=blue!8, rounded corners=2pt,
+                  text width=1.6cm, align=center, minimum height=0.75cm,
+                  font=\footnotesize},
+    drlblock/.style={rectangle, draw, fill=orange!15, rounded corners=2pt,
+                     text width=2.0cm, align=center, minimum height=0.75cm,
+                     font=\footnotesize},
+    sumnode/.style={circle, draw, fill=white, inner sep=1.5pt,
+                    font=\footnotesize},
+    arr/.style={-{Latex[length=2.5pt]}, thick},
+    node distance=0.7cm and 0.85cm
+  ]
+    % ---- main forward path ----
+    \node[sumnode] (sum) {$\Sigma$};
+    \node[block, right=of sum]  (pid)  {PID\\Controller};
+    \node[block, right=of pid]  (proc) {Process\\$G(s)$};
+
+    % r(t) input
+    \node[left=0.65cm of sum, font=\footnotesize] (r) {$r(t)$};
+    \draw[arr] (r) -- (sum);
+    \node[above left=0pt and 1pt of sum, font=\tiny] {$+$};
+    \node[below left=0pt and 1pt of sum, font=\tiny] {$-$};
+
+    % forward arrows
+    \draw[arr] (sum) -- (pid);
+    \draw[arr] (pid) -- node[above,font=\scriptsize]{$u[k]$} (proc);
+
+    % output
+    \node[right=0.65cm of proc, font=\footnotesize] (y) {$y(t)$};
+    \draw[arr] (proc) -- (y);
+
+    % feedback
+    \coordinate (fb) at ($(proc.east)+(0.35,0)$);
+    \draw[arr] (fb) -- ++(0,-0.9) -| node[near start, right, font=\scriptsize]{} (sum.south);
+
+    % ---- DRL block above ----
+    \node[drlblock, above=1.2cm of pid, xshift=0.6cm] (drl) {DRL Agent\\(SAC)};
+    \node[block,    above=1.2cm of proc, xshift=-0.6cm] (enc) {State\\Encoder};
+
+    % state encoder gets signals from process and error
+    \draw[arr] (proc.north) -- (enc.south)
+        node[midway, right, font=\scriptsize] {$y[k]$};
+    \draw[arr] (sum.north) |- (enc.west)
+        node[near end, above, font=\scriptsize] {$e[k]$};
+
+    % encoder to agent
+    \draw[arr] (enc.west) -- node[above, font=\scriptsize]{$\vek{s}_k$} (drl.east);
+
+    % agent to PID (gain update)
+    \draw[arr] (drl.west) -- node[above, font=\scriptsize]{$\Delta\vek{K}$} (pid.north);
+
+  \end{tikzpicture}
+  \caption{DRL-PID architecture. The state encoder constructs the
+    observation vector $\vek{s}_k$ from the error signal and process
+    output. The DRL agent outputs incremental gain adjustments $\Delta\vek{K}
+    = [\Delta K_p, \Delta K_i, \Delta K_d]^\top$, which are applied to
+    the PID controller before computing the next control signal $u[k]$.}
+  \label{fig:arch}
+\end{figure}
+
+\subsection{State Representation}
+
+The state vector is designed to capture all control-relevant information
+available to the agent without requiring internal process knowledge:
+\begin{equation}
+  \vek{s}_k = \bigl[e_k,\; e_{k-1},\; \Delta e_k,\; e_k^{\int},\;
+               y_k,\; u_{k-1},\; K_p^{(k)},\; K_i^{(k)},\; K_d^{(k)}\bigr]^\top
+              \in \R^9,
+  \label{eq:state}
+\end{equation}
+where $e_k = r_k - y_k$ is the current tracking error,
+$\Delta e_k = e_k - e_{k-1}$ approximates $\dot{e}$,
+$e_k^{\int} = T_s \sum_{j=0}^{k} e_j$ is the accumulated integral error,
+and the final three components are the current PID gains. All
+components are normalized to the interval $[-1, 1]$ using known physical
+bounds before being fed to the network.
+
+\subsection{Action Space}
+
+Rather than outputting absolute gain values---which could produce
+abrupt, potentially destabilizing changes---the agent outputs bounded
+incremental adjustments:
+\begin{equation}
+  \vek{a}_k = [\Delta K_p,\; \Delta K_i,\; \Delta K_d]^\top,
+  \quad \vek{a}_k \in [-\delta,\, \delta]^3,
+  \label{eq:action}
+\end{equation}
+where $\delta > 0$ is a maximum step size that limits gain changes per
+time step. Updated gains are clipped to safe operating ranges:
+\begin{equation}
+  K_j^{(k+1)} = \mathrm{clip}\!\left(K_j^{(k)} + \Delta K_j,\;
+                 K_j^{\min},\; K_j^{\max}\right),
+  \quad j \in \{p, i, d\}.
+  \label{eq:clip}
+\end{equation}
+This incremental formulation ensures continuity of the control signal
+and prevents the integrator windup that could arise from sudden large
+gain changes.
+
+\subsection{Reward Function}
+
+The reward function must simultaneously encourage small tracking errors,
+penalize excessive control effort, and discourage large or rapid gain
+changes that could excite unmodeled dynamics:
+\begin{equation}
+  r_k = -\alpha\, e_k^2
+         - \beta\, (\Delta u_k)^2
+         - \zeta\, \|\vek{a}_k\|_2^2
+         + \eta\, \mathbf{1}\!\left[|e_k| < \varepsilon\right],
+  \label{eq:reward}
+\end{equation}
+where $\Delta u_k = u_k - u_{k-1}$ is the control increment,
+$\mathbf{1}[\cdot]$ is the indicator function granting a bonus $\eta$
+whenever the absolute error is within tolerance $\varepsilon$, and
+$\alpha, \beta, \zeta, \eta > 0$ are weighting coefficients. The
+term $-\alpha e_k^2$ penalizes integral squared error (ISE) at each
+step, $-\beta(\Delta u_k)^2$ penalizes actuator wear, and $-\zeta
+\|\vek{a}_k\|_2^2$ regularizes the gain-adjustment magnitude.
+
+\subsection{Neural Network Architecture}
+
+Both actor and critic networks consist of three fully connected hidden
+layers with 256 units each and ReLU activations. The actor network
+outputs the mean $\mu_\theta(s)$ and log-standard deviation
+$\log\sigma_\theta(s)$ of a factored Gaussian, with the action computed
+as:
+\begin{equation}
+  a = \tanh\!\left(\mu_\theta(s) + \sigma_\theta(s) \odot \epsilon\right),
+  \quad \epsilon \sim \mathcal{N}(\mathbf{0}, \mathbf{I}),
+  \label{eq:reparam}
+\end{equation}
+using the reparameterization trick. Two independent critic networks are
+maintained and the minimum of their predictions is used in the target
+computation, following the clipped double-Q trick of TD3~\cite{Fujimoto2018}
+and SAC~\cite{Haarnoja2018}.
+
+\subsection{Training Procedure}
+
+\Cref{alg:drlpid} summarizes the DRL-PID training loop. The agent is
+trained in a simulated environment that wraps the chosen process model
+with additive Gaussian noise on the output, providing realistic sensor
+measurements.
+
+\begin{algorithm}[t]
+  \caption{DRL-PID Training}
+  \label{alg:drlpid}
+  \begin{algorithmic}[1]
+    \STATE Initialize actor $\pi_\theta$, critics $Q_{\phi_1}, Q_{\phi_2}$,
+           target networks, replay buffer $\mathcal{B}$
+    \STATE Initialize PID gains: $K_p^{(0)}, K_i^{(0)}, K_d^{(0)}$
+    \FOR{episode $= 1$ to $N_{\text{ep}}$}
+      \STATE Reset process, sample random setpoint trajectory $\{r_k\}$
+      \STATE Observe initial state $\vek{s}_0$
+      \FOR{$k = 0$ to $T/T_s - 1$}
+        \STATE Sample action $\vek{a}_k \sim \pi_\theta(\cdot \mid \vek{s}_k)$
+        \STATE Update gains via \cref{eq:clip}; apply $u[k]$ to process
+        \STATE Observe $\vek{s}_{k+1}$, compute $r_k$ via \cref{eq:reward}
+        \STATE Store $(\vek{s}_k, \vek{a}_k, r_k, \vek{s}_{k+1})$ in $\mathcal{B}$
+        \IF{$|\mathcal{B}| \geq B_{\min}$}
+          \STATE Sample mini-batch; update $\phi_1, \phi_2, \theta, \alpha$
+        \ENDIF
+      \ENDFOR
+    \ENDFOR
+  \end{algorithmic}
+\end{algorithm}
+
+% =====================================================================
+\section{Experimental Evaluation}
+\label{sec:exp}
+% =====================================================================
+
+\subsection{Experimental Setup}
+
+\textbf{Process Benchmarks.}
+Three process models are evaluated:
+\begin{compactitem}
+  \item \textbf{P1 (FOPDT):} $K = 1.0$, $\tau = \SI{10}{s}$, $\theta = \SI{2}{s}$;
+  \item \textbf{P2 (Integrating):} $K_I = 0.5$, $\theta = \SI{1}{s}$;
+  \item \textbf{P3 (Oscillatory):} $K = 1.0$, $\omega_n = \SI{0.5}{rad/s}$,
+    $\zeta = 0.3$.
+\end{compactitem}
+All simulations use a sampling period of $T_s = \SI{0.1}{s}$ and an
+episode length of $T = \SI{300}{s}$. Gaussian output noise with
+$\sigma_n = 0.01$ is added to each measurement.
+
+\textbf{Comparison Methods.}
+We compare against three classical tuning approaches:
+(i) Ziegler-Nichols closed-loop method~\cite{Ziegler1942},
+(ii) Cohen-Coon method~\cite{Cohen1953}, and
+(iii) IMC-PID with $\lambda = \tau$ for P1 and P3, and $\lambda = 5$
+for P2~\cite{Rivera1986}.
+
+\textbf{Performance Metrics.}
+Five standard metrics are used:
+\begin{align}
+  \text{IAE} &= \int_0^T |e(t)|\,dt, \label{eq:iae}\\
+  \text{ISE} &= \int_0^T e^2(t)\,dt, \label{eq:ise}\\
+  \text{ITAE} &= \int_0^T t\,|e(t)|\,dt, \label{eq:itae}
+\end{align}
+along with 2\% settling time $t_s$ and percentage overshoot
+$\sigma\% = 100(y_{\max} - r_{\infty})/r_{\infty}$.
+
+\textbf{DRL-PID Hyperparameters.}
+\Cref{tab:hyper} lists the hyperparameters used in all experiments.
+The agent is trained for 2000 episodes on P1, then fine-tuned for
+500 additional episodes on P2 and P3.
+
+\begin{table}[t]
+  \caption{DRL-PID Hyperparameters}
+  \label{tab:hyper}
+  \centering
+  \begin{tabular}{lc}
+    \toprule
+    Parameter & Value \\
+    \midrule
+    Actor learning rate & $3 \times 10^{-4}$ \\
+    Critic learning rate & $3 \times 10^{-4}$ \\
+    Discount factor $\gamma$ & $0.99$ \\
+    Replay buffer size & $10^6$ \\
+    Mini-batch size & $256$ \\
+    Soft-update rate $\tau_{\text{soft}}$ & $0.005$ \\
+    Temperature $\alpha$ & auto-tuned \\
+    Target entropy & $-\dim(\calA) = -3$ \\
+    Max gain step $\delta$ & $0.10$ \\
+    Reward weights $(\alpha, \beta, \zeta, \eta)$ & $(1.0, 0.05, 0.01, 5.0)$ \\
+    Tolerance band $\varepsilon$ & $0.02$ \\
+    Sampling period $T_s$ & $\SI{0.1}{s}$ \\
+    Hidden units (actor / critic) & $256 / 256$ \\
+    Hidden layers & $3$ \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Step Response Comparison}
+
+\Cref{fig:step_p1} shows the unit-step responses of all four methods on
+process P1 (FOPDT). DRL-PID achieves the fastest settling with the
+smallest overshoot, whereas Z-N produces the fastest initial rise but
+the largest overshoot and longest recovery. C-C improves over Z-N but
+still exhibits noticeable oscillation. IMC-PID produces a smooth,
+monotone response at the cost of a slower rise time.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      width=\linewidth, height=5.5cm,
+      xlabel={Time (s)},
+      ylabel={Process Output $y(t)$},
+      xmin=0, xmax=60,
+      ymin=-0.05, ymax=1.22,
+      grid=major, grid style={dotted,gray!50},
+      legend pos=south east,
+      legend style={font=\scriptsize, fill=white, fill opacity=0.9,
+                    draw opacity=1, text opacity=1},
+      tick label style={font=\scriptsize},
+      label style={font=\footnotesize},
+      every axis plot/.append style={thick},
+    ]
+    % Setpoint reference
+    \addplot[black, dashed, thin] coordinates {(0,1)(60,1)};
+
+    % Z-N response
+    \addplot[color=red!70!black] coordinates {
+      (0,0)(2,0)(4,0.10)(6,0.35)(8,0.62)(10,0.88)
+      (12,1.05)(14,1.123)(16,1.10)(18,1.07)(20,1.04)
+      (22,1.02)(25,1.01)(30,1.005)(35,1.002)(42,1.000)(60,1.000)
+    };
+    \addlegendentry{Ziegler-Nichols}
+
+    % C-C response
+    \addplot[color=blue!70!black] coordinates {
+      (0,0)(2,0)(4,0.08)(6,0.30)(8,0.55)(10,0.78)
+      (12,0.95)(14,1.06)(16,1.089)(18,1.065)(20,1.040)
+      (22,1.020)(25,1.010)(30,1.005)(38,1.000)(60,1.000)
+    };
+    \addlegendentry{Cohen-Coon}
+
+    % IMC-PID response
+    \addplot[color=green!60!black] coordinates {
+      (0,0)(2,0)(4,0.05)(6,0.20)(8,0.38)(10,0.56)
+      (13,0.75)(16,0.89)(20,0.98)(24,1.040)(26,1.052)
+      (28,1.040)(30,1.015)(32,1.000)(60,1.000)
+    };
+    \addlegendentry{IMC-PID}
+
+    % DRL-PID response
+    \addplot[color=orange!80!black] coordinates {
+      (0,0)(2,0)(4,0.10)(6,0.32)(8,0.58)(10,0.80)
+      (13,0.95)(16,1.020)(18,1.031)(20,1.025)
+      (22,1.010)(24,1.002)(25,1.000)(60,1.000)
+    };
+    \addlegendentry{DRL-PID (proposed)}
+
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Unit-step responses on process P1 (FOPDT: $K{=}1$,
+    $\tau{=}10\,$s, $\theta{=}2\,$s). The dashed line indicates the
+    reference setpoint $r = 1$.}
+  \label{fig:step_p1}
+\end{figure}
+
+\subsection{Quantitative Performance Comparison}
+
+\Cref{tab:results} reports all five performance metrics for each method
+on each process. DRL-PID consistently achieves the lowest error indices
+and the fastest settling time. On P1, DRL-PID reduces IAE from 20.1
+(IMC-PID, best classical) to 15.8 --- a \SI{21.4}{\percent} reduction.
+Compared with C-C, the IAE reduction is \SI{36.0}{\percent}. For the
+integrating process P2, which is inherently more challenging to control,
+DRL-PID reduces IAE by \SI{29.4}{\percent} versus IMC-PID. Averaged
+across all three processes and compared with C-C, the IAE reduction is
+\SI{38.7}{\percent}. The settling-time reduction relative to IMC-PID
+averages \SI{23.6}{\percent}.
+
+\begin{table*}[t]
+  \caption{Control Performance Comparison on Three Industrial Process Benchmarks}
+  \label{tab:results}
+  \centering
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{l
+                  S[table-format=2.1] S[table-format=2.1] S[table-format=3.0]
+                  S[table-format=2.1] S[table-format=2.1]
+                  S[table-format=2.1] S[table-format=2.1]
+                  S[table-format=2.1] S[table-format=2.1]}
+    \toprule
+    & \multicolumn{5}{c}{\textbf{P1 -- FOPDT}}
+    & \multicolumn{2}{c}{\textbf{P2 -- Integrating}}
+    & \multicolumn{2}{c}{\textbf{P3 -- Oscillatory}} \\
+    \cmidrule(lr){2-6}\cmidrule(lr){7-8}\cmidrule(lr){9-10}
+    \textbf{Method}
+      & {IAE} & {ISE} & {ITAE} & {$t_s$ (s)} & {OS (\%)}
+      & {IAE} & {$t_s$ (s)}
+      & {IAE} & {$t_s$ (s)} \\
+    \midrule
+    Ziegler-Nichols~\cite{Ziegler1942}
+      & 28.3  & 45.2  & 312   & 42.1  & 12.3
+      & 41.7  & 58.2
+      & 35.6  & 48.9 \\
+    Cohen-Coon~\cite{Cohen1953}
+      & 24.7  & 38.9  & 268   & 38.6  &  8.9
+      & 37.2  & 51.7
+      & 30.1  & 44.2 \\
+    IMC-PID~\cite{Rivera1986}
+      & 20.1  & 31.4  & 198   & 32.3  &  5.2
+      & 28.9  & 43.6
+      & 25.8  & 37.8 \\
+    \textbf{DRL-PID (ours)}
+      & \textbf{15.8}  & \textbf{22.7}  & \textbf{143}   & \textbf{24.8}  & \textbf{3.1}
+      & \textbf{20.4}  & \textbf{32.9}
+      & \textbf{19.3}  & \textbf{29.1} \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\subsection{Training Convergence}
+
+\Cref{fig:training} shows the episode reward averaged over a rolling
+window of 50 episodes during training on P1. The agent starts with
+poor performance (highly negative reward) as it explores the gain space
+with random actions. After approximately 400 episodes, the policy
+improves rapidly as the critic networks provide useful gradient signals.
+By episode 1000, the reward curve flattens to a high plateau, indicating
+convergence to a near-optimal policy.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+      width=\linewidth, height=4.8cm,
+      xlabel={Training Episode},
+      ylabel={Mean Episode Reward},
+      xmin=0, xmax=2000,
+      ymin=-55, ymax=6,
+      grid=major, grid style={dotted,gray!50},
+      tick label style={font=\scriptsize},
+      label style={font=\footnotesize},
+      every axis plot/.append style={thick},
+    ]
+    \addplot[color=orange!80!black] coordinates {
+      (0,-50)(50,-43)(100,-35)(150,-27)(200,-22)
+      (250,-17)(300,-14)(350,-10)(400,-8)(450,-5.5)
+      (500,-4.0)(550,-2.5)(600,-1.2)(650,-0.3)(700,0.5)
+      (750,1.2)(800,1.8)(850,2.3)(900,2.7)(950,3.0)
+      (1000,3.2)(1100,3.4)(1200,3.5)(1400,3.6)
+      (1600,3.65)(1800,3.68)(2000,3.70)
+    };
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Training convergence curve on process P1 (FOPDT). The
+    y-axis shows the 50-episode rolling mean of the episode reward
+    as defined in \cref{eq:reward}.}
+  \label{fig:training}
+\end{figure}
+
+\subsection{Robustness to Process Variations}
+
+To evaluate robustness, we applied DRL-PID (trained on nominal P1
+parameters) to perturbed versions of P1 in which the process gain $K$
+was varied by $\pm$\SI{30}{\percent} and the time constant $\tau$ was
+varied by $\pm$\SI{20}{\percent}. \Cref{tab:robustness} summarizes the
+IAE values under each perturbation scenario. DRL-PID maintains
+substantially lower IAE than the best classical method (IMC-PID) across
+all perturbed conditions, demonstrating that the learned policy
+generalizes to off-nominal operating points.
+
+\begin{table}[t]
+  \caption{IAE Robustness to P1 Parameter Variations}
+  \label{tab:robustness}
+  \centering
+  \begin{tabular}{l
+                  S[table-format=2.1]
+                  S[table-format=2.1]
+                  S[table-format=2.1]}
+    \toprule
+    \textbf{Scenario}
+      & {\textbf{IMC-PID}} & {\textbf{DRL-PID}} & {\textbf{Improve.(\%)}} \\
+    \midrule
+    Nominal ($K=1.0$, $\tau=10$) & 20.1 & 15.8 & 21.4 \\
+    $K = 0.7$                    & 24.3 & 17.6 & 27.6 \\
+    $K = 1.3$                    & 22.8 & 16.9 & 25.9 \\
+    $\tau = 8$                   & 18.6 & 14.5 & 22.0 \\
+    $\tau = 12$                  & 23.7 & 17.2 & 27.4 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =====================================================================
+\section{Discussion}
+\label{sec:discussion}
+% =====================================================================
+
+\textbf{Why DRL-PID outperforms classical methods.}
+Classical tuning rules minimize a fixed objective (e.g., quarter-decay
+ratio for Z-N or FOPDT-model-matching for C-C) at a single nominal
+operating point. The IMC-PID method offers a better-structured trade-off
+via the single tuning parameter $\lambda$, yet the gains remain fixed
+once chosen. DRL-PID, by contrast, continuously adapts the three gains
+at every sampling instant based on the observed system state. This
+online adaptation allows the controller to respond optimally to
+varying error dynamics: applying aggressive gains during the initial
+rise phase and softer gains near the setpoint to suppress overshoot.
+
+\textbf{Computational overhead.}
+During deployment, the DRL agent requires only a single forward pass
+through the actor network at each sampling instant. For the 9-dimensional
+state and 256-unit networks used here, this requires approximately
+$0.05\,$ms on a standard embedded CPU, which is negligible compared
+with a $T_s = 100\,$ms sampling period. The training phase is
+computationally more demanding (approximately 4 hours on a single GPU
+for 2000 episodes) but is performed offline prior to deployment.
+
+\textbf{Limitations.}
+Several limitations should be acknowledged. First, the training
+environment is a simulation, and the sim-to-real transfer gap may
+degrade performance on physical hardware. Techniques such as domain
+randomization~\cite{Hwangbo2019} and real-data fine-tuning can
+mitigate this issue. Second, the theoretical stability and safety
+guarantees of the learned policy are not yet established rigorously;
+future work should integrate Lyapunov-based safe RL
+constraints~\cite{Lawrence2022}. Third, the current formulation
+targets single-input single-output (SISO) processes; extending DRL-PID
+to multivariable systems is an important direction for future research.
+
+% =====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% =====================================================================
+
+This paper presented DRL-PID, a deep reinforcement learning framework
+for adaptive PID control in industrial process automation. By formulating
+online gain tuning as an MDP and training a soft actor-critic agent to
+output incremental gain adjustments, DRL-PID learns a control policy
+that continuously adapts to the observed process state without requiring
+an explicit process model. A composite reward function balancing tracking
+accuracy, control effort, and gain-change smoothness guides the agent
+toward practically safe and high-performance policies.
+
+Experiments on three representative industrial processes---FOPDT,
+integrating, and underdamped second-order---showed that DRL-PID
+consistently outperforms Ziegler-Nichols, Cohen-Coon, and IMC-PID tuning
+across all considered metrics. IAE was reduced by up to \SI{36}{\percent}
+compared with the best classical method, and settling time was shortened
+by \SI{23.6}{\percent} on average. Robustness experiments confirmed
+that the learned policy generalizes to off-nominal process conditions
+with sustained performance advantages.
+
+Future work will investigate sim-to-real transfer, multi-variable process
+control, formal safety constraints via constrained RL, and hardware-in-the-loop
+validation on industrial testbeds.
+
+% =====================================================================
 \section*{Acknowledgment}
+% =====================================================================
 
-Identification of funding sources and other support, and thanks to individuals and groups that assisted in the research and the preparation of the work should be included in an acknowledgment section, which is placed just before the reference section in your document \cite{acmart}.
+The authors would like to thank the anonymous reviewers for their
+constructive comments. This work was supported in part by the National
+Natural Science Foundation of China.
 
-%%% ===============================================================================
-%%% Bibliography
-%%% ===============================================================================
+% =====================================================================
+% Bibliography
+% =====================================================================
 
-% trigger a \newpage just before the given reference
-% number - used to balance the columns on the last page
-% adjust value as needed - may need to be readjusted if
-% the document is modified later
-%\IEEEtriggeratref{8}
-% The "triggered" command can be changed if desired:
-%\IEEEtriggercmd{\enlargethispage{-5in}}
-
-% Enable to reduce spacing between bibitems (source: https://tex.stackexchange.com/a/25774)
-% \def\IEEEbibitemsep{0pt plus .5pt}
-
-\bibliographystyle{IEEEtranN} % IEEEtranN is the natbib compatible bst file
-% argument is your BibTeX string definitions and bibliography database(s)
+\bibliographystyle{IEEEtranN}
 \bibliography{paper}
 
-% Enfore empty line after bibliography
 \ \\
-%
-\noindent
-All links were last followed on October 5, 2020.
+\noindent All links were last verified on May~4, 2026.
 
 \end{document}

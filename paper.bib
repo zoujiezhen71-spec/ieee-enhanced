@@ -1,46 +1,413 @@
 % Encoding: UTF-8
 
-@InProceedings{Winery,
-  author    = {Oliver Kopp and others},
-  booktitle = {Proceedings of 11\textsuperscript{th} International Conference on Service-Oriented Computing (ICSOC'13)},
-  title     = {{Winery -- A Modeling Tool for {TOSCA}-based Cloud Applications}},
+% =====================================================================
+% Classical PID Control
+% =====================================================================
+
+@Article{Ziegler1942,
+  author  = {Ziegler, J. G. and Nichols, N. B.},
+  title   = {Optimum Settings for Automatic Controllers},
+  journal = {Transactions of the ASME},
+  year    = {1942},
+  volume  = {64},
+  number  = {11},
+  pages   = {759--768},
+}
+
+@Book{Astrom1995,
+  author    = {{\AA}str{\"o}m, K. J. and H{\"a}gglund, T.},
+  title     = {{PID} Controllers: Theory, Design, and Tuning},
+  publisher = {Instrument Society of America},
+  year      = {1995},
+  edition   = {2nd},
+  address   = {Research Triangle Park, NC},
+}
+
+@Article{Cohen1953,
+  author  = {Cohen, G. H. and Coon, G. A.},
+  title   = {Theoretical Consideration of Retarded Control},
+  journal = {Transactions of the ASME},
+  year    = {1953},
+  volume  = {75},
+  pages   = {827--834},
+}
+
+@Article{Rivera1986,
+  author  = {Rivera, D. E. and Morari, M. and Skogestad, S.},
+  title   = {Internal Model Control: {PID} Controller Design},
+  journal = {Industrial \& Engineering Chemistry Process Design and Development},
+  year    = {1986},
+  volume  = {25},
+  number  = {1},
+  pages   = {252--265},
+  doi     = {10.1021/i200032a041},
+}
+
+@Book{ODwyer2006,
+  author    = {O'Dwyer, A.},
+  title     = {Handbook of {PI} and {PID} Controller Tuning Rules},
+  publisher = {Imperial College Press},
+  year      = {2006},
+  edition   = {2nd},
+  address   = {London},
+}
+
+@Article{Ho1995,
+  author  = {Ho, W. K. and Hang, C. C. and Cao, L. S.},
+  title   = {Tuning of {PID} Controllers Based on Gain and Phase Margin Specifications},
+  journal = {Automatica},
+  year    = {1995},
+  volume  = {31},
+  number  = {3},
+  pages   = {497--502},
+  doi     = {10.1016/0005-1098(94)00130-B},
+}
+
+@Book{Seborg2016,
+  author    = {Seborg, D. E. and Edgar, T. F. and Mellichamp, D. A. and Doyle, F. J.},
+  title     = {Process Dynamics and Control},
+  publisher = {Wiley},
+  year      = {2016},
+  edition   = {4th},
+  address   = {Hoboken, NJ},
+}
+
+@Book{Ogata2010,
+  author    = {Ogata, K.},
+  title     = {Modern Control Engineering},
+  publisher = {Prentice Hall},
+  year      = {2010},
+  edition   = {5th},
+  address   = {Upper Saddle River, NJ},
+}
+
+@Book{Franklin2018,
+  author    = {Franklin, G. F. and Powell, J. D. and Emami-Naeini, A.},
+  title     = {Feedback Control of Dynamic Systems},
+  publisher = {Pearson},
+  year      = {2018},
+  edition   = {8th},
+  address   = {Hoboken, NJ},
+}
+
+@Article{Smith1957,
+  author  = {Smith, O. J. M.},
+  title   = {Closer Control of Loops with Dead Time},
+  journal = {Chemical Engineering Progress},
+  year    = {1957},
+  volume  = {53},
+  number  = {5},
+  pages   = {217--219},
+}
+
+% =====================================================================
+% Adaptive and Intelligent Control
+% =====================================================================
+
+@Book{Astrom2013,
+  author    = {{\AA}str{\"o}m, K. J. and Wittenmark, B.},
+  title     = {Adaptive Control},
+  publisher = {Dover Publications},
   year      = {2013},
-  pages     = {700--704},
-  publisher = {Springer Berlin Heidelberg},
-  series    = {LNCS},
-  volume    = {8274},
-  doi       = {10.1007/978-3-642-45005-1_64},
-  keywords  = {Cloud Applications; Modeling; TOSCA; Management; Portability},
+  edition   = {2nd},
+  address   = {Mineola, NY},
 }
 
-@Article{Binz2009,
-  author    = {Tobias Binz and Gerd Breiter and Frank Leymann and Thomas Spatzier},
-  journal   = {IEEE Internet Computing},
-  title     = {{Portable Cloud Services Using TOSCA}},
+@Book{Ioannou2012,
+  author    = {Ioannou, P. A. and Sun, J.},
+  title     = {Robust Adaptive Control},
+  publisher = {Dover Publications},
   year      = {2012},
-  issn      = {1089-7801},
-  month     = may,
-  number    = {03},
-  pages     = {80--85},
-  volume    = {16},
-  doi       = {10.1109/mic.2012.43},
-  publisher = {IEEE Computer Society},
+  address   = {Mineola, NY},
 }
 
-@Manual{mwe,
-  title  = {The \texttt{mwe} Package},
-  author = {Martin Scharrer},
-  year   = {2017},
-  url    = {http://texdoc.net/mwe},
+@Article{Rugh2000,
+  author  = {Rugh, W. J. and Shamma, J. S.},
+  title   = {Research on Gain Scheduling},
+  journal = {Automatica},
+  year    = {2000},
+  volume  = {36},
+  number  = {10},
+  pages   = {1401--1425},
+  doi     = {10.1016/S0005-1098(00)00058-3},
 }
 
-@Misc{acmart,
-  author =       {Boris Veytsman},
-  year =         {2021},
-  month =        aug,
-  title =        {LaTeX Class for the Association for Computing Machinery -- Acknowledgement Information},
-  lastaccessed = {September 17, 2021},
-  url =          {https://github.com/borisveytsman/acmart/blob/1704c8bf7eee92a1515ff755f5118b6a22bb1f8e/samples/samples.dtx#L709},
+@Article{Hunt1992,
+  author  = {Hunt, K. J. and Sbarbaro, D. and Zbikowski, R. and Gawthrop, P. J.},
+  title   = {Neural Networks for Control Systems --- A Survey},
+  journal = {Automatica},
+  year    = {1992},
+  volume  = {28},
+  number  = {6},
+  pages   = {1083--1112},
+  doi     = {10.1016/0005-1098(92)90053-I},
+}
+
+@Article{Qin1993,
+  author  = {Qin, S. J. and Borders, G.},
+  title   = {A Multiregion Fuzzy Logic Controller for Nonlinear Process Control},
+  journal = {IEEE Transactions on Fuzzy Systems},
+  year    = {1994},
+  volume  = {2},
+  number  = {1},
+  pages   = {74--81},
+  doi     = {10.1109/91.273126},
+}
+
+@Book{Landau2011,
+  author    = {Landau, I. D. and Lozano, R. and M'Saad, M. and Karimi, A.},
+  title     = {Adaptive Control: Algorithms, Analysis and Applications},
+  publisher = {Springer},
+  year      = {2011},
+  address   = {London},
+}
+
+% =====================================================================
+% Reinforcement Learning Foundations
+% =====================================================================
+
+@Book{Sutton2018,
+  author    = {Sutton, R. S. and Barto, A. G.},
+  title     = {Reinforcement Learning: An Introduction},
+  publisher = {MIT Press},
+  year      = {2018},
+  edition   = {2nd},
+  address   = {Cambridge, MA},
+}
+
+@Book{Bellman1957,
+  author    = {Bellman, R.},
+  title     = {Dynamic Programming},
+  publisher = {Princeton University Press},
+  year      = {1957},
+  address   = {Princeton, NJ},
+}
+
+@Article{Watkins1992,
+  author  = {Watkins, C. J. C. H. and Dayan, P.},
+  title   = {Q-learning},
+  journal = {Machine Learning},
+  year    = {1992},
+  volume  = {8},
+  number  = {3--4},
+  pages   = {279--292},
+  doi     = {10.1007/BF00992698},
+}
+
+@Article{Williams1992,
+  author  = {Williams, R. J.},
+  title   = {Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning},
+  journal = {Machine Learning},
+  year    = {1992},
+  volume  = {8},
+  number  = {3--4},
+  pages   = {229--256},
+  doi     = {10.1007/BF00992696},
+}
+
+@Article{Hochreiter1997,
+  author  = {Hochreiter, S. and Schmidhuber, J.},
+  title   = {Long Short-Term Memory},
+  journal = {Neural Computation},
+  year    = {1997},
+  volume  = {9},
+  number  = {8},
+  pages   = {1735--1780},
+  doi     = {10.1162/neco.1997.9.8.1735},
+}
+
+% =====================================================================
+% Deep Reinforcement Learning Algorithms
+% =====================================================================
+
+@Article{Mnih2015,
+  author  = {Mnih, V. and Kavukcuoglu, K. and Silver, D. and Rusu, A. A. and Veness, J. and Bellemare, M. G. and Graves, A. and Riedmiller, M. and Fidjeland, A. K. and Ostrovski, G. and others},
+  title   = {Human-Level Control through Deep Reinforcement Learning},
+  journal = {Nature},
+  year    = {2015},
+  volume  = {518},
+  number  = {7540},
+  pages   = {529--533},
+  doi     = {10.1038/nature14236},
+}
+
+@InProceedings{Mnih2016,
+  author    = {Mnih, V. and Badia, A. P. and Mirza, M. and Graves, A. and Harley, T. and Lillicrap, T. P. and Silver, D. and Kavukcuoglu, K.},
+  title     = {Asynchronous Methods for Deep Reinforcement Learning},
+  booktitle = {Proceedings of the 33rd International Conference on Machine Learning (ICML)},
+  year      = {2016},
+  pages     = {1928--1937},
+}
+
+@Article{Lillicrap2016,
+  author  = {Lillicrap, T. P. and Hunt, J. J. and Pritzel, A. and Heess, N. and Erez, T. and Tassa, Y. and Silver, D. and Wierstra, D.},
+  title   = {Continuous Control with Deep Reinforcement Learning},
+  journal = {arXiv preprint arXiv:1509.02971},
+  year    = {2016},
+}
+
+@Article{Schulman2017,
+  author  = {Schulman, J. and Wolski, F. and Dhariwal, P. and Radford, A. and Klimov, O.},
+  title   = {Proximal Policy Optimization Algorithms},
+  journal = {arXiv preprint arXiv:1707.06347},
+  year    = {2017},
+}
+
+@InProceedings{Haarnoja2018,
+  author    = {Haarnoja, T. and Zhou, A. and Abbeel, P. and Levine, S.},
+  title     = {Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor},
+  booktitle = {Proceedings of the 35th International Conference on Machine Learning (ICML)},
+  year      = {2018},
+  pages     = {1861--1870},
+}
+
+@InProceedings{Fujimoto2018,
+  author    = {Fujimoto, S. and van Hoof, H. and Meger, D.},
+  title     = {Addressing Function Approximation Error in Actor-Critic Methods},
+  booktitle = {Proceedings of the 35th International Conference on Machine Learning (ICML)},
+  year      = {2018},
+  pages     = {1587--1596},
+}
+
+@InProceedings{Hessel2018,
+  author    = {Hessel, M. and Modayil, J. and van Hasselt, H. and Schaul, T. and Ostrovski, G. and Dabney, W. and Horgan, D. and Piot, B. and Azar, M. and Silver, D.},
+  title     = {Rainbow: Combining Improvements in Deep Reinforcement Learning},
+  booktitle = {Proceedings of the 32nd AAAI Conference on Artificial Intelligence},
+  year      = {2018},
+  pages     = {3215--3222},
+}
+
+% =====================================================================
+% Deep Learning and Applications
+% =====================================================================
+
+@Article{LeCun2015,
+  author  = {LeCun, Y. and Bengio, Y. and Hinton, G.},
+  title   = {Deep Learning},
+  journal = {Nature},
+  year    = {2015},
+  volume  = {521},
+  number  = {7553},
+  pages   = {436--444},
+  doi     = {10.1038/nature14539},
+}
+
+@Book{Goodfellow2016,
+  author    = {Goodfellow, I. and Bengio, Y. and Courville, A.},
+  title     = {Deep Learning},
+  publisher = {MIT Press},
+  year      = {2016},
+  address   = {Cambridge, MA},
+}
+
+@Article{Silver2016,
+  author  = {Silver, D. and Huang, A. and Maddison, C. J. and Guez, A. and Sifre, L. and van den Driessche, G. and Schrittwieser, J. and Antonoglou, I. and Panneershelvam, V. and Lanctot, M. and others},
+  title   = {Mastering the Game of {Go} with Deep Neural Networks and Tree Search},
+  journal = {Nature},
+  year    = {2016},
+  volume  = {529},
+  number  = {7587},
+  pages   = {484--489},
+  doi     = {10.1038/nature16961},
+}
+
+@Article{Silver2017,
+  author  = {Silver, D. and Schrittwieser, J. and Simonyan, K. and Antonoglou, I. and Huang, A. and Guez, A. and Hubert, T. and Baker, L. and Lai, M. and Bolton, A. and others},
+  title   = {Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm},
+  journal = {arXiv preprint arXiv:1712.01815},
+  year    = {2017},
+}
+
+% =====================================================================
+% DRL for Control and Automation
+% =====================================================================
+
+@Article{Koch2019,
+  author  = {Koch, P. and May, T. and Schiefer, M. and Zolynski, G. and Berns, K.},
+  title   = {Reinforcement Learning for Thermostat Control with an Application to {HVAC} Systems},
+  journal = {arXiv preprint arXiv:1911.05638},
+  year    = {2019},
+}
+
+@Article{Carlucho2017,
+  author  = {Carlucho, I. and De Paula, M. and Acosta, G. G.},
+  title   = {Incremental {Q}-Learning Strategy for Adaptive {PID} Control of a Mobile Robot},
+  journal = {Expert Systems with Applications},
+  year    = {2017},
+  volume  = {80},
+  pages   = {183--199},
+  doi     = {10.1016/j.eswa.2017.03.002},
+}
+
+@Article{Spielberg2019,
+  author  = {Spielberg, S. P. K. and Gopaluni, R. B. and Loewen, P. D.},
+  title   = {Deep Reinforcement Learning Approaches for Process Control},
+  journal = {Computers \& Chemical Engineering},
+  year    = {2019},
+  volume  = {127},
+  pages   = {272--281},
+  doi     = {10.1016/j.compchemeng.2019.05.022},
+}
+
+@Article{Degrave2022,
+  author  = {Degrave, J. and Felici, F. and Buchli, J. and Neunert, M. and Tracey, B. and Carpanese, F. and Ewalds, T. and Hafner, R. and Abdolmaleki, A. and de las Casas, D. and others},
+  title   = {Magnetic Control of Tokamak Plasmas through Deep Reinforcement Learning},
+  journal = {Nature},
+  year    = {2022},
+  volume  = {602},
+  number  = {7897},
+  pages   = {414--419},
+  doi     = {10.1038/s41586-021-04301-9},
+}
+
+@Article{Hwangbo2019,
+  author  = {Hwangbo, J. and Lee, J. and Dosovitskiy, A. and Bellicoso, D. and Tsounis, V. and Koltun, V. and Hutter, M.},
+  title   = {Learning Agile and Dynamic Motor Skills for Legged Robots},
+  journal = {Science Robotics},
+  year    = {2019},
+  volume  = {4},
+  number  = {26},
+  pages   = {eaau5872},
+  doi     = {10.1126/scirobotics.aau5872},
+}
+
+@Article{Recht2019,
+  author  = {Recht, B.},
+  title   = {A Tour of Reinforcement Learning: The View from Continuous Control},
+  journal = {Annual Review of Control, Robotics, and Autonomous Systems},
+  year    = {2019},
+  volume  = {2},
+  pages   = {253--279},
+  doi     = {10.1146/annurev-control-053018-023825},
+}
+
+@Article{Lawrence2022,
+  author  = {Lawrence, N. P. and Forbes, M. G. and Loewen, P. D. and McClement, D. G. and Backstr{\"o}m, J. U. and Gopaluni, R. B.},
+  title   = {Deep Reinforcement Learning with Shallow Controllers: An Experimental Application to {PID} Tuning},
+  journal = {Control Engineering Practice},
+  year    = {2022},
+  volume  = {121},
+  pages   = {105046},
+  doi     = {10.1016/j.conengprac.2021.105046},
+}
+
+@InProceedings{Abbeel2004,
+  author    = {Abbeel, P. and Ng, A. Y.},
+  title     = {Apprenticeship Learning via Inverse Reinforcement Learning},
+  booktitle = {Proceedings of the 21st International Conference on Machine Learning (ICML)},
+  year      = {2004},
+  pages     = {1},
+}
+
+@Article{Peters2008,
+  author  = {Peters, J. and Schaal, S.},
+  title   = {Reinforcement Learning of Motor Skills with Policy Gradients},
+  journal = {Neural Networks},
+  year    = {2008},
+  volume  = {21},
+  number  = {4},
+  pages   = {682--697},
+  doi     = {10.1016/j.neunet.2008.02.003},
 }
 
 @Comment{jabref-meta: databaseType:bibtex;}
