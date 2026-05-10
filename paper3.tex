@@ -116,9 +116,13 @@ and machine-tool spindles all depend on bearings for load support and
 rotational guidance. The EPRI and industry surveys consistently report
 that bearing faults initiate 40--50\% of induction motor failures, and
 that unplanned bearing-related downtime costs global manufacturing more
-than \$50 billion per year~\cite{Nandi2005,Randall2011}. Early detection
-of incipient bearing faults before they cause secondary damage or
-catastrophic failure is therefore a key industrial automation objective.
+than \$50 billion per year~\cite{Nandi2005,Randall2011}. Condition-based
+maintenance (CBM) strategies that continuously monitor machine health and
+schedule interventions only when needed have been shown to reduce
+maintenance costs by 25--30\% compared with fixed-interval
+approaches~\cite{Jardine2006,ISO13373}. Early detection of incipient
+bearing faults before they cause secondary damage or catastrophic failure
+is therefore a key industrial automation objective.
 
 Vibration analysis is the most widely employed condition monitoring
 technique for rotating machinery~\cite{Scheffer2004}. When a localized
@@ -148,7 +152,13 @@ margin between classes and are robust to overfitting.
 More recently, deep learning approaches---convolutional neural
 networks (CNNs), autoencoders, and residual networks---have demonstrated
 impressive diagnostic accuracy when large labelled datasets are
-available~\cite{Guo2016,Shao2017,Lei2020}. However, these methods
+available~\cite{Guo2016,Shao2017,Lei2020,Zhao2019}. Attention-based
+one-dimensional CNNs~\cite{Wang2019} and multiscale
+CNNs~\cite{Jiang2019} further improve feature discrimination by
+attending to the most informative frequency bands automatically.
+Stacked denoising autoencoders~\cite{Lu2017} and sparse autoencoders
+applied to motor current signals~\cite{Sun2016} have also shown strong
+generalization across load conditions. However, all these methods
 require thousands of training samples per class, significant GPU
 resources for training, and are difficult to interpret. For industrial
 deployments with limited labelled data and embedded hardware constraints,
@@ -219,7 +229,14 @@ condition monitoring, demonstrating that RBF kernel SVMs achieve higher
 accuracy than feed-forward neural networks on small datasets. Lei et
 al.~\cite{Lei2020} provided a comprehensive roadmap of machine learning
 for fault diagnosis, covering SVMs, random forests, $k$-nearest
-neighbours, and neural networks. The LIBSVM library~\cite{Chang2011}
+neighbours, and neural networks. Baraldi et al.~\cite{Baraldi2015}
+extended the KNN framework with binary differential evolution for
+feature selection, demonstrating robustness to variable operating
+conditions. He and He~\cite{He2020} showed that deep learning-based
+approaches for bearing fault diagnosis can rival SVM accuracy when
+sufficient training data is available, while Tang et
+al.~\cite{Tang2020} demonstrated CNN robustness in noisy industrial
+environments. The LIBSVM library~\cite{Chang2011}
 provides an efficient implementation used in this work. Pan et
 al.~\cite{Pan2010} and Liu et al.~\cite{Liu2018} reviewed deep learning
 approaches for rotating machinery diagnosis, noting that CNN-based
@@ -768,15 +785,20 @@ validating the fusion strategy.
 
 \textbf{Comparison with deep learning.}
 Deep CNN-based methods such as those reported by Guo et
-al.~\cite{Guo2016} achieve 99--100\% accuracy on the CWRU dataset
-with raw waveform input, but require 10,000--50,000 training samples
-per class and GPU inference hardware. In contrast, the proposed
-RBF-SVM achieves \SI{98.0}{\percent} with only 280 samples per class
-and runs on a standard CPU in under \SI{3}{\milli\second}. For
-embedded industrial condition monitoring systems (e.g., PLCs,
-microcontrollers) where data is scarce and GPU resources are
-unavailable, the proposed approach is therefore more appropriate and
-practically relevant~\cite{Liu2018,Widodo2007}.
+al.~\cite{Guo2016} and Zhao et al.~\cite{Zhao2019} achieve 99--100\%
+accuracy on the CWRU dataset with raw waveform input, but require
+10,000--50,000 training samples per class and GPU inference hardware.
+Attention-based 1DCNNs~\cite{Wang2019} further require careful
+architectural tuning. In contrast, the proposed RBF-SVM achieves
+\SI{98.0}{\percent} with only 280 samples per class and runs on a
+standard CPU in under \SI{3}{\milli\second}. For embedded industrial
+condition monitoring systems (e.g., PLCs, microcontrollers) where
+data is scarce and GPU resources are unavailable, the proposed
+approach is therefore more appropriate and practically
+relevant~\cite{Liu2018,Widodo2007}. Under noisy industrial
+environments, Tang et al.~\cite{Tang2020} report that CNN-based
+methods still require substantial noise-augmented training data,
+a requirement that the handcrafted feature pipeline avoids by design.
 
 \textbf{Fault detection vs.\ fault isolation.}
 The current framework performs both detection (fault present/absent)
@@ -827,7 +849,10 @@ on embedded industrial controllers.
 Future work will investigate compound fault scenarios, variable-speed
 operation, and transfer learning strategies to reduce the labelled data
 requirement when deploying the framework on new machine types without
-full re-identification of the feature statistics.
+full re-identification of the feature statistics. Integration with
+condition-based maintenance scheduling~\cite{Jardine2006} and
+international monitoring standards~\cite{ISO13373} will also be
+pursued to facilitate industrial certification and deployment.
 
 % =====================================================================
 \section*{Acknowledgment}
