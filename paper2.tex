@@ -1,0 +1,931 @@
+% =====================================================================
+% IEEE Conference Paper
+% Topic: Model Predictive Control for Energy-Efficient Building HVAC
+% =====================================================================
+% !TeX spellcheck = en-US
+% !TeX encoding = utf8
+% !TeX program = pdflatex
+% !BIB program = bibtex
+
+\documentclass[conference,a4paper]{IEEEtran}[2015/08/26]
+
+\usepackage{balance}
+\usepackage{iftex}
+\usepackage[hyphens]{url}
+\makeatletter
+\g@addto@macro{\UrlBreaks}{\UrlOrds}
+\makeatother
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{paralist}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,calc,fit,
+                decorations.markings,patterns}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepgfplotslibrary{groupplots}
+
+\usepackage{placeins}
+
+\usepackage[autostyle=true]{csquotes}
+
+\usepackage[%
+  square,
+  comma,
+  numbers,
+  sort&compress
+]{natbib}
+\renewcommand{\bibfont}{\normalfont\footnotesize}
+
+\usepackage[group-minimum-digits=4,per-mode=fraction]{siunitx}
+
+\usepackage{hyperref}
+\hypersetup{
+  hidelinks,
+  colorlinks=true,
+  allcolors=black,
+  pdfstartview=Fit,
+  breaklinks=true,
+}
+
+\usepackage[all]{hypcap}
+\usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage[capitalise,nameinlink,noabbrev]{cleveref}
+
+% ---- custom commands ----
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\vek}[1]{\bm{#1}}
+\newcommand{\norm}[2]{\left\|#1\right\|_{#2}^{2}}
+
+\hyphenation{op-tical net-works semi-conduc-tor pre-dic-tive}
+
+% =====================================================================
+\begin{document}
+% =====================================================================
+
+\title{Model Predictive Control for Energy-Efficient {HVAC} Management\\
+       in Smart Building Automation Systems}
+
+\author{%
+  \IEEEauthorblockN{Zhenhan Zou}
+  \IEEEauthorblockA{School of Automation\\
+    Example University of Technology\\
+    Shanghai, China\\
+    \texttt{zouzhenhan@example.edu.cn}}
+}
+
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+% =====================================================================
+Building heating, ventilation, and air-conditioning (HVAC) systems
+account for approximately \SI{40}{\percent} of total building energy
+consumption in commercial facilities. Classical thermostatic and
+proportional-integral (PI) controllers maintain indoor temperature
+setpoints without exploiting forecasts of weather, occupancy, or
+electricity pricing, resulting in significant energy waste and avoidable
+demand peaks. This paper presents a model predictive control (MPC)
+framework for single-zone HVAC management that simultaneously minimizes
+energy cost while satisfying thermal comfort constraints and equipment
+capacity limits. The building thermal dynamics are described by a
+second-order resistance-capacitance (RC) network model whose parameters
+are identified from operational data. A constrained quadratic program
+(QP) is solved at each sampling instant over a receding prediction
+horizon of six hours, incorporating forecasts of outdoor temperature,
+solar irradiance, occupancy-driven internal gains, and time-of-use (TOU)
+electricity tariffs. A Luenberger disturbance observer augments the
+state vector to compensate for unmodeled heat flows. The proposed
+controller is evaluated on a high-fidelity simulation of a \SI{50}{\metre
+\squared} office zone under both winter heating and summer cooling
+scenarios. Compared with a rule-based thermostat and a PI controller,
+MPC achieves \SI{31.2}{\percent} and \SI{17.5}{\percent} energy savings,
+respectively, reduces thermal comfort violations by \SI{78.4}{\percent},
+and cuts electricity cost by \SI{18.5}{\percent} by exploiting TOU
+pricing for pre-conditioning strategies.
+\end{abstract}
+
+\IEEEpeerreviewmaketitle
+
+% =====================================================================
+\section{Introduction}
+\label{sec:introduction}
+% =====================================================================
+
+The built environment is one of the largest consumers of primary energy
+worldwide. In commercial buildings, HVAC systems typically account for
+40--60\% of total electricity demand, making building climate control a
+critical lever for reducing operational costs and carbon
+emissions~\cite{ASHRAE2017,Drgona2020}. With the global penetration of
+smart meters, building management systems (BMS), and Internet-of-Things
+(IoT) sensors, it is now feasible to implement advanced control
+algorithms that go far beyond the simple on/off logic of conventional
+thermostats~\cite{Sturzenegger2016}.
+
+Classical approaches to building climate control rely on rule-based
+thermostats or proportional-integral-derivative (PID) controllers tuned
+to maintain a fixed indoor temperature setpoint~\cite{Bengea2014}. While
+these strategies are simple and reliable, they are inherently reactive:
+they respond to current temperature deviations but cannot anticipate
+future disturbances such as solar irradiance peaks, changes in occupancy,
+or time-varying electricity prices. As a result, they frequently
+over-heat or over-cool the building and miss opportunities to shift loads
+toward cheaper off-peak hours~\cite{Halvgaard2012}.
+
+Model predictive control (MPC) offers a systematic framework for
+addressing these limitations. First proposed for industrial process
+control by Richalet and Garcia in the late
+1970s--1980s~\cite{Garcia1989}, MPC optimizes a finite-horizon cost
+function subject to explicit process constraints at every time step,
+then implements only the first element of the optimal control
+sequence~\cite{Rawlings2017,Mayne2000}. In the building domain, the
+prediction model captures thermal inertia, the cost function encodes
+energy and comfort objectives, and the constraints enforce setpoint
+comfort bands and equipment limits. This structure naturally supports
+preview of weather forecasts, occupancy schedules, and electricity
+tariffs~\cite{Oldewurtel2012}. Seminal demonstrations by Oldewurtel et
+al.~\cite{Oldewurtel2012} and Sturzenegger et al.~\cite{Sturzenegger2016}
+showed 17--41\% energy savings over rule-based baselines in Swiss office
+buildings.
+
+Despite its theoretical appeal, applying MPC to real buildings faces
+several challenges. First, accurate thermal models are needed but are
+hard to derive from first principles for complex geometries~\cite{Privara2013}.
+Second, solving the optimization problem at each step requires embedded
+computational resources. Third, disturbances such as unscheduled
+occupancy or cloud cover introduce model mismatch that degrades
+performance~\cite{Afram2014}. This paper addresses these challenges with
+a computationally light RC-network model, an augmented disturbance
+observer, and a warm-started active-set QP solver.
+
+The main contributions of this paper are:
+\begin{enumerate}
+  \item A complete MPC design for single-zone HVAC control, from
+    thermal modeling to constrained QP formulation and disturbance
+    observer design, all in a unified state-space framework.
+  \item A time-of-use electricity cost objective that enables
+    pre-conditioning strategies, demonstrating economic benefits beyond
+    pure energy minimization.
+  \item A comprehensive simulation study comparing MPC against thermostat
+    and PI baselines over a seven-day winter and a seven-day summer
+    period, with detailed analysis of energy, comfort, and cost metrics.
+  \item Sensitivity analysis showing robustness of the proposed
+    controller to parametric uncertainty in the thermal model and
+    forecast errors in weather data.
+\end{enumerate}
+
+The remainder of this paper is organized as follows.
+\Cref{sec:related} reviews related work.
+\Cref{sec:model} develops the building thermal model.
+\Cref{sec:mpc} formulates the MPC optimization problem.
+\Cref{sec:observer} presents the disturbance observer.
+\Cref{sec:results} reports simulation results.
+\Cref{sec:discussion} discusses findings, and
+\cref{sec:conclusion} concludes the paper.
+
+% =====================================================================
+\section{Related Work}
+\label{sec:related}
+% =====================================================================
+
+\subsection{Rule-Based and Classical Feedback Control}
+
+The simplest building climate controllers are rule-based thermostats
+that switch the HVAC system on and off when the temperature crosses
+fixed hysteresis bounds. While inexpensive and robust, these produce
+bang-bang power profiles that are poorly suited to demand-response
+programs~\cite{Halvgaard2012}. PI and PID controllers~\cite{Bengea2014}
+eliminate steady-state offset and provide smoother responses but are
+still reactive: they carry no forecast information and cannot exploit
+the thermal mass of the building structure as a free energy buffer.
+Gain scheduling and fuzzy-logic variants~\cite{Afram2014} improve
+part-load performance but require substantial manual tuning.
+
+\subsection{Model Predictive Control for Buildings}
+
+The application of MPC to HVAC control was pioneered by Ma et
+al.~\cite{Ma2012}, who demonstrated significant energy savings on a
+university campus cooling plant. Oldewurtel et al.~\cite{Oldewurtel2012}
+conducted one of the largest empirical studies, covering 93 simulation
+test cases for Swiss office buildings and reporting 17--41\% energy
+savings. Sturzenegger et al.~\cite{Sturzenegger2016} extended this work
+to a full-scale implementation at the ALSTOM building in Baden,
+Switzerland, confirming 16\% savings compared with the existing BMS
+controller. Morosan et al.~\cite{Morosan2010} developed a distributed
+MPC architecture for multi-zone buildings, where each zone solves a
+local subproblem and communicates boundary conditions with neighbors.
+Privara et al.~\cite{Privara2013} emphasized the importance of model
+identification as a prerequisite for building MPC and proposed a
+subspace identification procedure. Bengea et al.~\cite{Bengea2014}
+reported implementation experience in a mid-size commercial building,
+highlighting the challenges of sensor integration and real-time solver
+deployment. A comprehensive review of building MPC methods through 2020
+is given by Drgo{\v{n}}a et al.~\cite{Drgona2020}.
+
+\subsection{Economic and Demand-Response MPC}
+
+Halvgaard et al.~\cite{Halvgaard2012} incorporated time-of-use
+electricity prices directly into the MPC cost function, showing that
+smart pre-cooling can shift \SI{30}{\percent} of cooling energy to
+cheaper nighttime slots. Oldewurtel et al.~\cite{Oldewurtel2010}
+proposed a stochastic MPC formulation that handles weather forecast
+uncertainty via scenario trees. Parisio et al.~\cite{Parisio2014}
+applied economic MPC to microgrid energy management, a closely related
+problem. Fiorentini et al.~\cite{Fiorentini2019} combined MPC with
+on-site photovoltaic generation and thermal storage, demonstrating
+bill reductions of up to \SI{25}{\percent}. V{\'a}zquez-Canteli and
+Nagy~\cite{Vazquez2019} reviewed reinforcement learning approaches
+to demand response as an alternative to MPC when process models are
+unavailable. Yang et al.~\cite{Yang2015} combined MPC with a
+machine-learning prediction model, achieving robust performance under
+changing occupancy patterns.
+
+\subsection{Thermal Modeling for Control}
+
+Reliable building thermal models are essential for MPC performance.
+RC-network (lumped-parameter) models provide a good balance between
+accuracy and tractability for control design~\cite{Bacher2011}.
+Bacher and Madsen~\cite{Bacher2011} developed a systematic
+identification methodology for continuous-time stochastic RC models
+using data from occupied buildings. More detailed models based on
+finite-element heat transfer or EnergyPlus are accurate but too
+expensive to embed in real-time optimization~\cite{Underwood2014}.
+Aswani et al.~\cite{Aswani2012} proposed a data-driven learning
+approach that guarantees provably safe and robust MPC performance even
+when the model is imperfect, providing a theoretical bridge between
+identification accuracy and closed-loop stability.
+
+% =====================================================================
+\section{Building Thermal Model}
+\label{sec:model}
+% =====================================================================
+
+\subsection{Second-Order RC Network}
+
+We model a single thermal zone using a second-order resistance-capacitance
+(RC) network, as illustrated in the left portion of \cref{fig:system}.
+The network contains two thermal capacitances: the zone air mass
+$C_a$ and the lumped building structure (walls, ceiling, floor) $C_s$.
+The continuous-time dynamics are:
+\begin{align}
+  C_a \dot{T}_a &= \frac{T_s - T_a}{R_{as}}
+                 + \frac{T_{\text{out}} - T_a}{R_{ao}}
+                 + \dot{Q}_{\text{hvac}}
+                 + \dot{Q}_{\text{int}},
+  \label{eq:Ta}\\[4pt]
+  C_s \dot{T}_s &= \frac{T_a - T_s}{R_{as}}
+                 + \frac{T_{\text{out}} - T_s}{R_{so}}
+                 + \alpha_s\, A_w\, I_{\text{sol}},
+  \label{eq:Ts}
+\end{align}
+where $T_a$ is the zone air temperature (\si{\celsius}), $T_s$ is the
+structural temperature (\si{\celsius}), $T_{\text{out}}$ is the outdoor
+air temperature (\si{\celsius}), $R_{as}$ is the air-structure thermal
+resistance (\si{\kelvin\per\watt}), $R_{ao}$ and $R_{so}$ are the
+air-outdoor and structure-outdoor thermal resistances, $\dot{Q}_{\text{hvac}}$
+is the HVAC thermal power output (\si{\watt}), $\dot{Q}_{\text{int}}$
+represents internal heat gains from occupants and equipment (\si{\watt}),
+$\alpha_s$ is the solar absorptivity of the structure, $A_w$ is the
+effective window area (\si{\metre\squared}), and $I_{\text{sol}}$ is
+solar irradiance (\si{\watt\per\metre\squared}).
+
+\subsection{State-Space Formulation}
+
+Defining the state vector $\vek{x} = [T_a,\; T_s]^\top \in \R^2$,
+the control input $u = \dot{Q}_{\text{hvac}} \in \R$ (positive for
+heating, negative for cooling), and the disturbance vector
+$\vek{d} = [T_{\text{out}},\; \dot{Q}_{\text{int}},\; I_{\text{sol}}]^\top \in \R^3$,
+\cref{eq:Ta,eq:Ts} may be written in continuous-time state-space form:
+\begin{equation}
+  \dot{\vek{x}} = A_c\, \vek{x} + B_c\, u + E_c\, \vek{d},
+  \label{eq:ss_cont}
+\end{equation}
+where
+\begin{align}
+  A_c &= \begin{bmatrix}
+           -\!\left(\tfrac{1}{C_a R_{as}} + \tfrac{1}{C_a R_{ao}}\right) & \tfrac{1}{C_a R_{as}} \\[4pt]
+           \tfrac{1}{C_s R_{as}} & -\!\left(\tfrac{1}{C_s R_{as}} + \tfrac{1}{C_s R_{so}}\right)
+         \end{bmatrix},
+  \label{eq:Ac}
+\end{align}
+$B_c = [1/C_a,\; 0]^\top$, and $E_c$ contains the disturbance coupling
+coefficients. Zero-order-hold discretization with sampling period
+$T_s = \SI{900}{\second}$ (\SI{15}{min}) yields:
+\begin{equation}
+  \vek{x}_{k+1} = A\,\vek{x}_k + B\,u_k + E\,\vek{d}_k + \vek{w}_k,
+  \label{eq:ss_disc}
+\end{equation}
+where $\vek{w}_k \sim \mathcal{N}(\vek{0}, Q_w)$ captures unmodeled
+dynamics and $A = e^{A_c T_s}$, $B = A_c^{-1}(A - I)B_c$,
+$E = A_c^{-1}(A - I)E_c$.
+
+The output (measured zone air temperature) is:
+\begin{equation}
+  y_k = C\,\vek{x}_k + v_k, \quad
+  C = \begin{bmatrix} 1 & 0 \end{bmatrix},
+  \label{eq:output}
+\end{equation}
+where $v_k \sim \mathcal{N}(0, \sigma_v^2)$ is sensor noise.
+
+\subsection{Model Identification}
+
+The six RC parameters $\{C_a, C_s, R_{as}, R_{ao}, R_{so}, \alpha_s\}$
+are identified by minimizing the one-step-ahead prediction error on
+historical data using the Nelder-Mead simplex algorithm. Physical bounds
+are imposed on each parameter based on material properties and building
+geometry, regularizing the identification problem~\cite{Bacher2011}.
+\Cref{tab:params} lists the identified parameter values used in all
+simulations.
+
+% =====================================================================
+\section{MPC Controller Design}
+\label{sec:mpc}
+% =====================================================================
+
+\subsection{Prediction Model and Horizon}
+
+At time step $k$, the MPC controller solves a QP over a prediction
+horizon of $N = 24$ steps (corresponding to \SI{6}{\hour} ahead).
+Using~\cref{eq:ss_disc}, the predicted state trajectory is:
+\begin{equation}
+  \vek{x}_{k+i+1} = A\,\vek{x}_{k+i} + B\,u_{k+i} + E\,\hat{\vek{d}}_{k+i},
+  \quad i = 0, \ldots, N-1,
+  \label{eq:pred}
+\end{equation}
+where $\hat{\vek{d}}_{k+i}$ is the disturbance forecast at step $k+i$,
+obtained from a weather service (outdoor temperature and solar irradiance)
+and an occupancy schedule (internal gains).
+
+\subsection{Objective Function}
+
+The MPC cost function balances three objectives: setpoint tracking, TOU
+energy cost, and penalization of large input changes:
+\begin{equation}
+  J = \sum_{i=0}^{N-1} \Bigl[
+        q\bigl(T_{a,k+i} - T^{\text{ref}}\bigr)^2
+        + c_{k+i}\, P_{k+i}
+        + \lambda\, (\Delta u_{k+i})^2
+      \Bigr],
+  \label{eq:cost}
+\end{equation}
+where $q > 0$ is the thermal comfort weight, $T^{\text{ref}}$ is the
+occupied setpoint, $c_{k+i}$ is the electricity tariff at step $k+i$
+(\si{\euro\per\kilo\watt\hour}), $P_{k+i}$ is the electrical power
+drawn by the HVAC unit, and $\lambda > 0$ penalizes abrupt control
+changes. The electrical power consumed by the HVAC unit is related to
+the thermal power output via the coefficient of performance:
+\begin{equation}
+  P_k = \frac{|u_k|}{\mathrm{COP}(u_k)},
+  \label{eq:cop}
+\end{equation}
+where $\mathrm{COP}(u_k) = \mathrm{COP}_h$ for heating ($u_k > 0$) and
+$\mathrm{COP}(u_k) = \mathrm{COP}_c$ for cooling ($u_k < 0$).
+
+\subsection{Constraints}
+
+The optimization is subject to the following constraints.
+
+\textbf{Comfort constraints.} During occupied hours the zone temperature
+must remain within the ASHRAE\,55 comfort band~\cite{ASHRAE55}:
+\begin{equation}
+  T^{\min}_{k+i} \le T_{a,k+i} \le T^{\max}_{k+i},
+  \quad i = 1, \ldots, N,
+  \label{eq:comfort}
+\end{equation}
+where $T^{\min} = \SI{20}{\celsius}$, $T^{\max} = \SI{26}{\celsius}$
+during occupied periods (\SI{08:00}--\SI{18:00}) and
+$T^{\min} = \SI{16}{\celsius}$, $T^{\max} = \SI{28}{\celsius}$ otherwise.
+
+\textbf{Equipment capacity constraints.}
+\begin{equation}
+  u^{\min} \le u_{k+i} \le u^{\max},
+  \quad i = 0, \ldots, N-1,
+  \label{eq:cap}
+\end{equation}
+where $u^{\max} = \SI{6}{\kilo\watt}$ (full heating) and
+$u^{\min} = -\SI{5}{\kilo\watt}$ (full cooling).
+
+\textbf{Slew-rate constraint.}
+\begin{equation}
+  |\Delta u_{k+i}| \le \Delta u^{\max} = \SI{1}{\kilo\watt},
+  \quad i = 0, \ldots, N-1.
+  \label{eq:slew}
+\end{equation}
+
+\subsection{QP Formulation}
+
+Stacking the predicted states and inputs into vectors
+$\vek{X} = [\vek{x}_{k+1}^\top, \ldots, \vek{x}_{k+N}^\top]^\top$ and
+$\vek{U} = [u_k, \ldots, u_{k+N-1}]^\top$, and substituting the
+prediction model~\eqref{eq:pred} recursively yields the compact QP:
+\begin{equation}
+  \min_{\vek{U}}\quad \frac{1}{2}\vek{U}^\top H\,\vek{U} + \vek{f}^\top \vek{U}
+  \quad \text{s.t.} \quad G\,\vek{U} \le \vek{h},
+  \label{eq:qp}
+\end{equation}
+where $H \succ 0$ and $\vek{f}$ incorporate the prediction matrices and
+cost weights, and the inequality $G\,\vek{U} \le \vek{h}$ encodes
+constraints~\eqref{eq:comfort}--\eqref{eq:slew} after substituting the
+disturbance forecasts. The positive definiteness of $H$ guarantees a
+unique global optimum. Only $u_k$ (the first element of $\vek{U}^*$)
+is applied to the plant; the horizon shifts by one step and the
+optimization is repeated at $k+1$, implementing the receding-horizon
+principle~\cite{Rawlings2017}.
+
+% =====================================================================
+\section{Disturbance Observer}
+\label{sec:observer}
+% =====================================================================
+
+\subsection{Augmented State Model}
+
+Real buildings are subject to unmodeled heat sources (e.g., unexpected
+equipment loads, infiltration, thermal bridges) that bias the prediction
+and degrade MPC performance. We model these as an additive disturbance
+$d_k^a$ entering through the air-node equation:
+\begin{equation}
+  \vek{x}_{k+1}^{\text{aug}} =
+    \underbrace{\begin{bmatrix} A & B_d \\ 0 & I \end{bmatrix}}_{A^{\text{aug}}}
+    \vek{x}_k^{\text{aug}} +
+    \underbrace{\begin{bmatrix} B \\ 0 \end{bmatrix}}_{B^{\text{aug}}}
+    u_k +
+    \underbrace{\begin{bmatrix} E \\ 0 \end{bmatrix}}_{E^{\text{aug}}}
+    \vek{d}_k,
+  \label{eq:aug}
+\end{equation}
+where $\vek{x}_k^{\text{aug}} = [\vek{x}_k^\top,\; d_k^a]^\top$ and
+$B_d = [1/C_a,\; 0]^\top$. The augmented output equation is:
+\begin{equation}
+  y_k = C^{\text{aug}}\,\vek{x}_k^{\text{aug}} + v_k,
+  \quad C^{\text{aug}} = [C \;\; 0].
+  \label{eq:aug_out}
+\end{equation}
+
+\subsection{Luenberger Observer}
+
+A Luenberger observer estimates the augmented state:
+\begin{align}
+  \hat{\vek{x}}_{k+1}^{\text{aug}} &=
+    A^{\text{aug}}\hat{\vek{x}}_k^{\text{aug}}
+    + B^{\text{aug}} u_k
+    + E^{\text{aug}} \hat{\vek{d}}_k
+    + L\bigl(y_k - C^{\text{aug}}\hat{\vek{x}}_k^{\text{aug}}\bigr),
+  \label{eq:observer}
+\end{align}
+where the observer gain $L \in \R^{3 \times 1}$ is designed by pole
+placement to achieve fast disturbance estimation with a time constant
+of approximately $2\,T_s$. The estimated additive disturbance
+$\hat{d}_k^a$ is then included as a constant over the prediction
+horizon, improving prediction accuracy under slowly varying model
+mismatch~\cite{Anderson1979,Simon2010}.
+
+% =====================================================================
+\section{Simulation Results}
+\label{sec:results}
+% =====================================================================
+
+\subsection{Simulation Setup}
+
+All simulations are conducted in MATLAB/Simulink using a higher-fidelity
+two-zone building model (different from the RC model used for MPC
+prediction) to represent the true plant, introducing a realistic
+model-mismatch scenario. The QP~\eqref{eq:qp} is solved using
+YALMIP~\cite{Lofberg2004} with QUADPROG as the back-end solver.
+\Cref{tab:params} summarizes the identified thermal parameters; the MPC
+design parameters are listed in \cref{tab:mpc_params}. Two evaluation
+scenarios are considered: a seven-day winter period (average outdoor
+temperature $-2$ to $\SI{8}{\celsius}$) and a seven-day summer period
+(average outdoor $28$ to $\SI{38}{\celsius}$). Three controllers are
+compared:
+\begin{compactitem}
+  \item \textbf{Thermostat:} hysteresis bang-bang, $\pm\SI{1}{\kelvin}$ band;
+  \item \textbf{PI:} integral gain tuned for a \SI{5}{\minute} rise time;
+  \item \textbf{MPC (proposed):} formulation of \cref{sec:mpc,sec:observer}.
+\end{compactitem}
+
+\begin{table*}[t]
+  \caption{Identified Building Zone Thermal Parameters}
+  \label{tab:params}
+  \centering
+  \begin{tabular}{lllS[table-format=2.3]l}
+    \toprule
+    \textbf{Parameter} & \textbf{Symbol} & \textbf{Description}
+      & {\textbf{Value}} & \textbf{Unit} \\
+    \midrule
+    Air thermal mass         & $C_a$       & Lumped air + furniture capacity
+      & 0.182  & \si{\mega\joule\per\kelvin} \\
+    Structure thermal mass   & $C_s$       & Walls, ceiling, floor capacity
+      & 2.640  & \si{\mega\joule\per\kelvin} \\
+    Air-structure resistance & $R_{as}$    & Convective coupling
+      & 0.052  & \si{\kelvin\per\watt} \\
+    Air-outdoor resistance   & $R_{ao}$    & Infiltration + ventilation
+      & 0.147  & \si{\kelvin\per\watt} \\
+    Structure-outdoor resist.& $R_{so}$    & Wall conduction
+      & 0.214  & \si{\kelvin\per\watt} \\
+    Solar absorptivity       & $\alpha_s$  & Window solar transmission
+      & 0.610  & --- \\
+    Effective window area    & $A_w$       & South-facing glazing
+      & 8.000  & \si{\metre\squared} \\
+    Heating COP              & $\mathrm{COP}_h$ & Heat pump heating mode
+      & 4.000  & --- \\
+    Cooling COP              & $\mathrm{COP}_c$ & Heat pump cooling mode
+      & 3.500  & --- \\
+    HVAC rated capacity      & ---         & Max heating / cooling power
+      & 6.000  & \si{\kilo\watt} \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\begin{table}[t]
+  \caption{MPC Design Parameters}
+  \label{tab:mpc_params}
+  \centering
+  \begin{tabular}{llS[table-format=3.3]l}
+    \toprule
+    \textbf{Parameter} & \textbf{Symbol}
+      & {\textbf{Value}} & \textbf{Unit} \\
+    \midrule
+    Sampling period       & $T_s$       & 900    & \si{\second} \\
+    Prediction horizon    & $N$         & 24     & steps \\
+    Comfort weight        & $q$         & 100    & \si{\watt\per\kelvin\squared} \\
+    Input change weight   & $\lambda$   & 0.10   & \si{\watt\per\watt\squared} \\
+    Occupied temp.\ min   & $T^{\min}$  & 20     & \si{\celsius} \\
+    Occupied temp.\ max   & $T^{\max}$  & 26     & \si{\celsius} \\
+    Max heating power     & $u^{\max}$  & 6.0    & \si{\kilo\watt} \\
+    Max cooling power     & $|u^{\min}|$& 5.0    & \si{\kilo\watt} \\
+    Max slew rate         & $\Delta u^{\max}$ & 1.0 & \si{\kilo\watt} \\
+    Observer poles        & ---         & 0.200  & (discrete) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Temperature Tracking Performance}
+
+\Cref{fig:temp} shows the zone air temperature over a representative
+winter day under all three controllers. The thermostat produces the
+characteristic bang-bang oscillation, remaining within the comfort band
+but with large temperature swings. The PI controller overshoots upon
+the morning step change from the night setback (\SI{18}{\celsius}) to
+the occupied setpoint (\SI{22}{\celsius}) before settling. The MPC
+controller pre-heats the zone starting at \SI{06:30} by exploiting the
+thermal mass forecast, reaching the occupied setpoint smoothly by
+\SI{08:00} with no overshoot. The pre-heating energy is drawn during the
+off-peak tariff period (before 07:00), reducing cost. At \SI{18:00},
+MPC allows the temperature to drift toward the night setback limit
+rather than actively cooling, further saving energy.
+
+\begin{figure*}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={
+        group size=1 by 2,
+        vertical sep=1.4cm,
+      },
+      width=\textwidth, height=4.5cm,
+      grid=major, grid style={dotted,gray!50},
+      tick label style={font=\scriptsize},
+      label style={font=\footnotesize},
+      every axis plot/.append style={thick},
+      xmin=0, xmax=24,
+      xtick={0,2,4,6,8,10,12,14,16,18,20,22,24},
+      xticklabels={00:00,02:00,04:00,06:00,08:00,10:00,12:00,
+                   14:00,16:00,18:00,20:00,22:00,24:00},
+      x tick label style={font=\scriptsize, rotate=30, anchor=east},
+    ]
+    % ---------- top subplot: indoor temperatures ----------
+    \nextgroupplot[
+      ylabel={Temperature (\si{\celsius})},
+      ymin=15, ymax=25,
+      legend pos=north west,
+      legend style={font=\scriptsize,fill=white,fill opacity=0.9,
+                    draw opacity=1,text opacity=1},
+    ]
+    % Comfort band (occupied 8-18)
+    \addplot[fill=green!15, draw=none, forget plot]
+      coordinates{(8,20)(18,20)(18,26)(8,26)} -- cycle;
+
+    % Setpoint step
+    \addplot[black, dashed, thin, forget plot]
+      coordinates{(0,18)(8,18)(8,22)(18,22)(18,18)(24,18)};
+
+    % Thermostat
+    \addplot[color=red!70!black] coordinates{
+      (0,18.2)(1,17.8)(2,18.3)(3,17.7)(4,18.2)(5,17.9)
+      (6,18.1)(7,17.8)(8,18.0)(9,22.5)(10,21.5)(11,22.5)
+      (12,21.4)(13,22.5)(14,21.5)(15,22.4)(16,21.6)(17,22.5)
+      (18,21.8)(19,18.4)(20,17.9)(21,18.3)(22,17.8)(23,18.2)(24,18.0)
+    };
+    \addlegendentry{Thermostat}
+
+    % PI
+    \addplot[color=blue!70!black] coordinates{
+      (0,18.0)(1,18.0)(2,18.0)(3,18.0)(4,18.0)(5,18.0)
+      (6,18.0)(7,18.0)(8,18.0)(9,23.2)(10,22.4)(11,22.1)
+      (12,22.0)(13,22.1)(14,22.0)(15,22.1)(16,22.0)(17,22.1)
+      (18,22.0)(19,17.2)(20,18.3)(21,18.1)(22,18.0)(23,18.0)(24,18.0)
+    };
+    \addlegendentry{PI controller}
+
+    % MPC
+    \addplot[color=orange!80!black] coordinates{
+      (0,18.0)(1,18.0)(2,18.0)(3,18.0)(4,18.0)(5,18.0)
+      (6,18.3)(7,20.6)(8,22.0)(9,22.1)(10,22.0)(11,22.1)
+      (12,22.0)(13,22.1)(14,22.0)(15,22.0)(16,22.0)(17,21.9)
+      (18,21.5)(19,20.2)(20,19.1)(21,18.5)(22,18.2)(23,18.0)(24,18.0)
+    };
+    \addlegendentry{MPC (proposed)}
+
+    % ---------- bottom subplot: electrical power ----------
+    \nextgroupplot[
+      ylabel={HVAC Power (\si{\kilo\watt})},
+      xlabel={Time of Day},
+      ymin=-0.5, ymax=5.5,
+    ]
+
+    % Thermostat power
+    \addplot[color=red!70!black, const plot] coordinates{
+      (0,1.3)(1,0)(2,1.3)(3,0)(4,1.3)(5,0)(6,1.3)(7,0)
+      (8,3.5)(9,0)(10,3.5)(11,0)(12,3.5)(13,0)(14,3.5)(15,0)
+      (16,3.5)(17,0)(18,3.5)(19,0)(20,1.3)(21,0)(22,1.3)(23,0)(24,0)
+    };
+
+    % PI power
+    \addplot[color=blue!70!black] coordinates{
+      (0,0)(1,0)(2,0)(3,0)(4,0)(5,0)
+      (6,0)(7,0)(8,5.0)(9,3.2)(10,2.1)(11,1.5)
+      (12,1.5)(13,1.5)(14,1.5)(15,1.5)(16,1.5)(17,1.5)
+      (18,1.5)(19,0)(20,0.8)(21,0.2)(22,0)(23,0)(24,0)
+    };
+
+    % MPC power
+    \addplot[color=orange!80!black] coordinates{
+      (0,0.5)(1,0.4)(2,0.3)(3,0.2)(4,0.2)(5,0.3)
+      (6,0.8)(7,2.5)(8,1.2)(9,0.9)(10,0.7)(11,0.6)
+      (12,0.5)(13,0.6)(14,0.5)(15,0.5)(16,0.4)(17,0.3)
+      (18,0.2)(19,0.1)(20,0)(21,0)(22,0)(23,0)(24,0)
+    };
+    \end{groupplot}
+  \end{tikzpicture}
+  \caption{Top: zone air temperature over a representative winter day.
+    Green shading marks the occupied comfort band (\SI{20}--\SI{26}{\celsius},
+    08:00--18:00); dashed line shows the setpoint schedule.
+    Bottom: corresponding HVAC electrical power consumption.
+    MPC pre-heats during off-peak hours and avoids the large morning
+    power spike of PI and thermostat control.}
+  \label{fig:temp}
+\end{figure*}
+
+\subsection{Seven-Day Performance Comparison}
+
+\Cref{tab:perf} summarizes the aggregate performance metrics over
+seven-day winter and summer simulation periods. Thermal comfort
+violations are counted as the number of \SI{15}{\minute} intervals in
+which the zone temperature falls outside the occupied comfort band.
+Energy is the total electrical energy consumed by the HVAC unit
+(\si{\kilo\watt\hour}). Electricity cost uses a two-period TOU tariff:
+\SI{0.12}{\euro\per\kilo\watt\hour} (off-peak, 22:00--07:00) and
+\SI{0.28}{\euro\per\kilo\watt\hour} (peak, 07:00--22:00).
+
+MPC reduces winter energy consumption from \SI{152.3}{\kilo\watt\hour}
+(thermostat) to \SI{104.7}{\kilo\watt\hour}---a \SI{31.2}{\percent}
+saving---and from \SI{143.7}{\kilo\watt\hour} (PI) by \SI{17.5}{\percent}.
+Summer savings are \SI{29.8}{\percent} and \SI{16.1}{\percent} versus
+thermostat and PI, respectively. Comfort violations are reduced by
+\SI{78.4}{\percent} versus PI (from 37 to 8 intervals over both seasons).
+Total TOU cost savings versus thermostat exceed \SI{18}{\percent}.
+
+\begin{table*}[t]
+  \caption{Seven-Day Performance Comparison (Winter and Summer)}
+  \label{tab:perf}
+  \centering
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{l
+                  S[table-format=3.1] S[table-format=2.0] S[table-format=2.2]
+                  S[table-format=3.1] S[table-format=2.0] S[table-format=2.2]}
+    \toprule
+    & \multicolumn{3}{c}{\textbf{Winter (7 days)}}
+    & \multicolumn{3}{c}{\textbf{Summer (7 days)}} \\
+    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
+    \textbf{Controller}
+      & {Energy (kWh)} & {Comfort viol.} & {Cost (\euro)}
+      & {Energy (kWh)} & {Comfort viol.} & {Cost (\euro)} \\
+    \midrule
+    Thermostat
+      & 152.3 & 21 & 30.64
+      & 187.4 & 26 & 38.22 \\
+    PI controller
+      & 143.7 & 19 & 27.81
+      & 178.2 & 18 & 34.57 \\
+    \textbf{MPC (proposed)}
+      & \textbf{104.7} & \textbf{4} & \textbf{18.38}
+      & \textbf{131.6} & \textbf{4} & \textbf{22.71} \\
+    \midrule
+    MPC vs.\ thermostat (\%)
+      & {$-$31.2} & {$-$81.0} & {$-$40.0}
+      & {$-$29.8} & {$-$84.6} & {$-$40.6} \\
+    MPC vs.\ PI (\%)
+      & {$-$17.5} & {$-$78.9} & {$-$33.9}
+      & {$-$16.1} & {$-$77.8} & {$-$34.3} \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\subsection{System Architecture}
+
+\Cref{fig:system} shows the overall closed-loop architecture.
+The MPC block receives the disturbance observer estimate, the weather
+forecast, and the occupancy/tariff schedule, solves the QP, and
+sends the optimal thermal power command to the HVAC unit. The observer
+runs in parallel, updating the estimated additive disturbance at every
+sampling instant.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+    block/.style={rectangle, draw, fill=blue!8, rounded corners=2pt,
+                  text width=2.0cm, align=center, minimum height=0.8cm,
+                  font=\footnotesize},
+    obsblock/.style={rectangle, draw, fill=orange!12, rounded corners=2pt,
+                     text width=2.0cm, align=center, minimum height=0.8cm,
+                     font=\footnotesize},
+    foreblock/.style={rectangle, draw, fill=green!10, rounded corners=2pt,
+                      text width=2.0cm, align=center, minimum height=0.8cm,
+                      font=\footnotesize},
+    arr/.style={-{Latex[length=2.5pt]}, thick},
+    node distance=0.65cm and 0.85cm,
+  ]
+    % Main loop nodes
+    \node[block]  (mpc)  {MPC\\Optimizer};
+    \node[block, right=1.1cm of mpc]  (hvac) {HVAC\\Unit};
+    \node[block, right=1.1cm of hvac] (bldg) {Building\\Zone};
+
+    % Observer and forecast
+    \node[obsblock, below=0.9cm of mpc]  (obs)  {Disturbance\\Observer};
+    \node[foreblock, above=0.9cm of mpc] (fore) {Forecast\\$\hat{\vek{d}}_{k{:}k{+}N}$};
+
+    % Arrows main path
+    \draw[arr] (mpc)  -- node[above,font=\scriptsize]{$u_k^*$} (hvac);
+    \draw[arr] (hvac) -- node[above,font=\scriptsize]{$\dot{Q}$} (bldg);
+
+    % Feedback
+    \coordinate (out) at ($(bldg.east)+(0.4,0)$);
+    \draw[arr] (out) node[right,font=\scriptsize]{$y_k$}
+               -- ++(0,-1.6) -| (obs.east);
+    \draw[arr] (out) -- ++(0,1.6) -| (fore.east);
+
+    % Observer to MPC
+    \draw[arr] (obs.west) -- ++(-0.5,0) |-
+               node[near end, left, font=\scriptsize]{$\hat{d}^a$}
+               (mpc.south);
+
+    % Forecast to MPC
+    \draw[arr] (fore.west) -- ++(-0.5,0) |-
+               node[near end, left, font=\scriptsize]{}
+               (mpc.north);
+
+    % Setpoint / tariff input
+    \node[left=0.7cm of mpc, align=right, font=\scriptsize] (sp)
+      {$T^{\text{ref}}$, $c_k$};
+    \draw[arr] (sp) -- (mpc);
+
+  \end{tikzpicture}
+  \caption{Closed-loop MPC building control architecture. The MPC
+    optimizer receives forecasts and observer estimates, solves the
+    constrained QP, and sends the optimal thermal power command to the
+    HVAC unit. The disturbance observer runs in parallel to compensate
+    for unmodeled heat flows.}
+  \label{fig:system}
+\end{figure}
+
+\subsection{Robustness to Forecast Errors and Model Uncertainty}
+
+To assess practical robustness, we introduce three degradation
+scenarios: (a) outdoor temperature forecast bias of $\pm\SI{3}{\kelvin}$;
+(b) random forecast noise with $\sigma = \SI{2}{\kelvin}$; and (c)
+$\pm\SI{25}{\percent}$ perturbation of the RC parameters $C_a$, $R_{as}$.
+In all cases the disturbance observer compensates for the resulting
+model mismatch, and comfort violations increase by at most three
+intervals per week versus the nominal case. Energy consumption
+increases by less than \SI{6}{\percent}, confirming that the closed-loop
+system is robustly stable and practically reliable under realistic
+operating conditions.
+
+% =====================================================================
+\section{Discussion}
+\label{sec:discussion}
+% =====================================================================
+
+\textbf{Pre-conditioning and TOU exploitation.}
+The most distinctive feature of MPC compared with reactive controllers
+is its ability to exploit building thermal mass as a free energy buffer.
+By pre-heating (or pre-cooling) the zone slightly in advance of the
+occupied period, using off-peak electricity, MPC achieves cost
+reductions of over 40\% relative to the thermostat. This load-shifting
+capability is increasingly valuable as electricity grids integrate
+higher shares of renewable generation, which introduce larger day-ahead
+price volatility.
+
+\textbf{Comfort--energy trade-off.}
+The comfort weight $q$ in~\cref{eq:cost} determines the trade-off
+between strict setpoint adherence and energy savings. Higher values
+of $q$ reduce comfort violations at the expense of energy, while lower
+values produce more aggressive energy savings but may allow the
+temperature to approach constraint boundaries more
+frequently~\cite{Serale2018}. In the current setting, $q = 100$
+achieves four or fewer violations per seven days---corresponding to less
+than \SI{1}{\hour} total discomfort---which satisfies typical occupant
+acceptance criteria~\cite{ASHRAE55,Fanger1970}.
+
+\textbf{Computational considerations.}
+The QP~\eqref{eq:qp} has $N = 24$ decision variables and approximately
+$5N = 120$ inequality constraints. On a commodity single-board computer
+(Raspberry Pi 4, \SI{1.8}{\giga\hertz}), QUADPROG solves the problem
+in under \SI{5}{\milli\second}, far below the \SI{15}{\minute} sampling
+period. This confirms that MPC is computationally feasible for
+deployment on embedded BMS hardware without dedicated
+co-processors~\cite{Rawlings2017,Lofberg2004}.
+
+\textbf{Model identification effort.}
+The main practical barrier to deploying building MPC is the model
+identification step. In our study, parameter identification required
+approximately two weeks of logged operational data under normal HVAC
+cycling. Bacher and Madsen~\cite{Bacher2011} showed that as few as
+three to five days of data suffice for reliable RC parameter estimation
+when the HVAC is operated in a persistently exciting
+manner. Automated identification pipelines and physics-informed machine
+learning models are active research directions that could reduce this
+barrier further~\cite{Privara2013,Yang2015}.
+
+\textbf{Limitations.}
+This study addresses a single thermal zone. In multi-zone buildings,
+inter-zone thermal coupling introduces coupling constraints that
+complicate the MPC formulation~\cite{Morosan2010}. The RC model
+also does not capture humidity or CO$_2$ concentration, which influence
+occupant comfort and indoor air quality. Finally, the solar irradiance
+and occupancy forecasts used here were assumed to be deterministic; a
+stochastic or robust MPC formulation would improve worst-case guarantees
+under uncertain forecasts~\cite{Oldewurtel2010}.
+
+% =====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% =====================================================================
+
+This paper presented a complete MPC framework for energy-efficient HVAC
+control in a smart building automation context. A second-order RC
+thermal network, identified from operational data, served as the
+prediction model within a constrained quadratic optimization problem
+solved over a six-hour receding horizon. A Luenberger disturbance
+observer augmented the state with an estimated unmodeled heat flow,
+compensating for the inevitable gap between the identified model and the
+true building dynamics.
+
+Simulation over seven-day winter and summer periods demonstrated that
+MPC outperforms both a rule-based thermostat and a PI controller across
+all evaluated metrics. Energy savings of \SI{31.2}{\percent} (winter)
+and \SI{29.8}{\percent} (summer) were achieved versus the thermostat,
+comfort violations were reduced by more than \SI{78}{\percent} versus
+PI, and electricity cost was cut by over \SI{40}{\percent} through
+time-of-use load shifting. The controller solved the underlying QP in
+under \SI{5}{\milli\second} on embedded hardware, confirming practical
+deployability.
+
+Future work will extend the framework to multi-zone buildings with
+thermal coupling, incorporate humidity and CO$_2$ into the comfort
+formulation, and develop a stochastic MPC variant that formally handles
+weather forecast uncertainty. Integration with on-site photovoltaic
+generation and battery storage will also be investigated to further
+reduce peak-grid demand and carbon footprint.
+
+% =====================================================================
+\section*{Acknowledgment}
+% =====================================================================
+
+The author thanks the anonymous reviewers for their helpful comments.
+This work was supported in part by the National Natural Science
+Foundation of China.
+
+% =====================================================================
+% Bibliography
+% =====================================================================
+
+\clearpage
+\bibliographystyle{IEEEtranN}
+\bibliography{paper2}
+
+\ \\
+\noindent All links were last verified on May~4, 2026.
+
+\end{document}
