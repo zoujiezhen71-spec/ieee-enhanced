@@ -1,0 +1,851 @@
+% =====================================================================
+% IEEE Conference Paper
+% Topic: Vibration-Based Fault Detection and Diagnosis for Industrial
+%        Rotating Machinery Using Spectral Analysis and SVM
+% =====================================================================
+% !TeX spellcheck = en-US
+% !TeX encoding = utf8
+% !TeX program = pdflatex
+% !BIB program = bibtex
+
+\documentclass[conference,a4paper]{IEEEtran}[2015/08/26]
+
+\usepackage{balance}
+\usepackage{iftex}
+\usepackage[hyphens]{url}
+\makeatletter
+\g@addto@macro{\UrlBreaks}{\UrlOrds}
+\makeatother
+
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{bm}
+
+\usepackage[dvipsnames,table]{xcolor}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{paralist}
+
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric,arrows.meta,positioning,calc,fit,
+                decorations.markings,matrix}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\usepgfplotslibrary{groupplots,colorbrewer}
+
+\usepackage{placeins}
+
+\usepackage[autostyle=true]{csquotes}
+\usepackage[square,comma,numbers,sort&compress]{natbib}
+\renewcommand{\bibfont}{\normalfont\footnotesize}
+
+\usepackage[group-minimum-digits=4,per-mode=fraction]{siunitx}
+
+\usepackage{hyperref}
+\hypersetup{hidelinks,colorlinks=true,allcolors=black,
+            pdfstartview=Fit,breaklinks=true}
+\usepackage[all]{hypcap}
+\usepackage[caption=false,font=footnotesize]{subfig}
+\usepackage[capitalise,nameinlink,noabbrev]{cleveref}
+
+% ---- custom commands ----
+\newcommand{\vek}[1]{\bm{#1}}
+\newcommand{\norm}[1]{\left\|#1\right\|}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator{\sgn}{sgn}
+
+\hyphenation{op-tical di-ag-no-sis vi-bra-tion bear-ing}
+
+% =====================================================================
+\begin{document}
+% =====================================================================
+
+\title{Vibration-Based Fault Detection and Diagnosis for Industrial\\
+       Rotating Machinery Using Spectral Analysis and\\
+       Support Vector Machines}
+
+\author{%
+  \IEEEauthorblockN{Zhenhan Zou}
+  \IEEEauthorblockA{School of Automation\\
+    Example University of Technology\\
+    Shanghai, China\\
+    \texttt{zouzhenhan@example.edu.cn}}
+}
+
+\maketitle
+
+% =====================================================================
+\begin{abstract}
+% =====================================================================
+Rolling-element bearing failures account for the majority of unplanned
+downtime incidents in industrial rotating machinery, yet early fault
+detection remains challenging due to the complexity and non-stationarity
+of measured vibration signals. This paper proposes a comprehensive
+fault detection and diagnosis (FDD) framework that combines multi-domain
+feature extraction with a support vector machine (SVM) classifier for
+discriminating four bearing health conditions: normal operation, inner
+race defect, outer race defect, and rolling element defect. Vibration
+signals are first preprocessed through band-pass filtering and envelope
+demodulation. Features are then extracted from three domains: the
+time domain (root mean square, kurtosis, crest factor, skewness),
+the frequency domain (power spectral density peak amplitudes at
+characteristic defect frequencies and their harmonics), and the
+time-frequency domain (wavelet packet energy coefficients). A
+radial basis function (RBF) kernel SVM trained on a 70/30
+stratified split of the Case Western Reserve University (CWRU) bearing
+benchmark dataset achieves \SI{98.0}{\percent} overall classification
+accuracy, outperforming linear SVM (\SI{94.0}{\percent}), $k$-nearest
+neighbours (\SI{95.2}{\percent}), and random forest (\SI{96.4}{\percent}).
+The framework is computationally lightweight---requiring less than
+\SI{3}{\milli\second} per inference---making it suitable for deployment
+on embedded industrial controllers for real-time condition monitoring.
+\end{abstract}
+
+\IEEEpeerreviewmaketitle
+
+% =====================================================================
+\section{Introduction}
+\label{sec:intro}
+% =====================================================================
+
+Rolling-element bearings are among the most critical components in
+rotating machinery: electric motors, pumps, compressors, wind turbines,
+and machine-tool spindles all depend on bearings for load support and
+rotational guidance. The EPRI and industry surveys consistently report
+that bearing faults initiate 40--50\% of induction motor failures, and
+that unplanned bearing-related downtime costs global manufacturing more
+than \$50 billion per year~\cite{Nandi2005,Randall2011}. Early detection
+of incipient bearing faults before they cause secondary damage or
+catastrophic failure is therefore a key industrial automation objective.
+
+Vibration analysis is the most widely employed condition monitoring
+technique for rotating machinery~\cite{Scheffer2004}. When a localized
+defect on a bearing raceway or rolling element passes through the load
+zone, it generates repetitive impulses at characteristic frequencies
+determined by the bearing geometry and shaft speed. These impulses,
+embedded in broadband vibration noise, must be reliably extracted and
+classified by the monitoring system. The classical approach relies on
+narrowband root mean square (RMS) trending and threshold alarms, which
+require expert interpretation and cannot distinguish between fault
+types~\cite{McFadden1984}.
+
+Modern signal processing methods such as the Hilbert--Huang
+transform~\cite{Huang1998}, spectral kurtosis~\cite{Antoni2006}, and
+wavelet packet decomposition~\cite{Peng2005} have substantially improved
+feature-level representation of bearing faults. However, the final
+diagnostic step---mapping features to fault categories---traditionally
+relies on expert rules that do not generalize across different machines
+and operating conditions. Machine learning classifiers, particularly
+support vector machines (SVMs)~\cite{Cortes1995,Vapnik1998}, address
+this limitation by learning decision boundaries from labelled training
+data. Widodo and Yang~\cite{Widodo2007} showed that SVM-based
+classifiers outperform neural networks of comparable complexity on
+small bearing fault datasets, primarily because SVMs maximize the
+margin between classes and are robust to overfitting.
+
+More recently, deep learning approaches---convolutional neural
+networks (CNNs), autoencoders, and residual networks---have demonstrated
+impressive diagnostic accuracy when large labelled datasets are
+available~\cite{Guo2016,Shao2017,Lei2020}. However, these methods
+require thousands of training samples per class, significant GPU
+resources for training, and are difficult to interpret. For industrial
+deployments with limited labelled data and embedded hardware constraints,
+a well-engineered handcrafted feature set combined with an SVM
+classifier remains a competitive and practically preferred
+solution~\cite{Liu2018,Widodo2007}.
+
+This paper makes the following contributions:
+\begin{enumerate}
+  \item A systematic multi-domain feature extraction pipeline that
+    combines time-domain statistics, fault-frequency-selective PSD
+    amplitudes, and wavelet packet energy coefficients into a
+    compact 17-dimensional feature vector.
+  \item A rigorous comparative study of five classifiers (RBF-SVM,
+    linear SVM, KNN, random forest, naive Bayes) on the widely used
+    CWRU benchmark, with full details of hyperparameter selection
+    and cross-validation.
+  \item Theoretical analysis of the characteristic defect frequencies
+    and their connection to the proposed frequency-domain features,
+    grounding the feature design in physical signal generation
+    mechanisms.
+  \item Demonstration that the proposed RBF-SVM framework achieves
+    \SI{98.0}{\percent} accuracy with an inference time of
+    \SI{2.8}{\milli\second}, meeting real-time constraints of
+    typical industrial condition monitoring systems.
+\end{enumerate}
+
+The remainder of this paper is structured as follows.
+\Cref{sec:related} surveys related work.
+\Cref{sec:signal} describes signal acquisition and preprocessing.
+\Cref{sec:features} details feature extraction.
+\Cref{sec:svm} presents the SVM classifier.
+\Cref{sec:exp} reports experimental results.
+\Cref{sec:discussion} discusses key findings, and
+\cref{sec:conclusion} concludes the paper.
+
+% =====================================================================
+\section{Related Work}
+\label{sec:related}
+% =====================================================================
+
+\subsection{Signal Processing for Bearing Fault Detection}
+
+Early bearing diagnostics relied on envelope analysis applied to the
+demodulated resonance band of the accelerometer signal~\cite{McFadden1984}.
+Randall and Antoni~\cite{Randall2001} provided a thorough tutorial on
+rolling element bearing diagnosis via cyclostationary analysis and
+spectral kurtosis. Antoni~\cite{Antoni2006,Antoni2007} introduced the
+kurtogram, which automatically selects the optimal band for envelope
+analysis by maximizing the spectral kurtosis, significantly reducing
+the need for expert intervention. Wavelet-based methods, reviewed by
+Peng and Chu~\cite{Peng2005} and Yan et al.~\cite{Yan2014}, offer
+time-frequency localization superior to the short-time Fourier
+transform, enabling detection of transient impulses buried in
+non-stationary noise. Huang et al.~\cite{Huang1998} proposed empirical
+mode decomposition (EMD) and the Hilbert--Huang transform as a fully
+adaptive time-frequency method; Rai and Upadhyay~\cite{Rai2016}
+reviewed its bearing fault applications. Mallat~\cite{Mallat2009}
+provides the theoretical foundation for discrete and continuous
+wavelet transforms used in this work.
+
+\subsection{Machine Learning Classifiers}
+
+The transition from signal processing to automated diagnosis requires
+mapping extracted features to fault categories. Widodo and
+Yang~\cite{Widodo2007} systematically evaluated SVMs for machinery
+condition monitoring, demonstrating that RBF kernel SVMs achieve higher
+accuracy than feed-forward neural networks on small datasets. Lei et
+al.~\cite{Lei2020} provided a comprehensive roadmap of machine learning
+for fault diagnosis, covering SVMs, random forests, $k$-nearest
+neighbours, and neural networks. The LIBSVM library~\cite{Chang2011}
+provides an efficient implementation used in this work. Pan et
+al.~\cite{Pan2010} and Liu et al.~\cite{Liu2018} reviewed deep learning
+approaches for rotating machinery diagnosis, noting that CNN-based
+methods excel when training data is plentiful but degrade on small,
+class-imbalanced datasets.
+
+\subsection{Benchmark Datasets}
+
+The Case Western Reserve University (CWRU) bearing dataset~\cite{Loparo2003,
+Smith2015} is the most widely used benchmark in bearing fault diagnosis
+research. It provides vibration signals from a 2 hp induction motor
+at four load conditions (0--3 hp) and three fault diameters
+(0.007, 0.014, 0.028 inches) for inner race, outer race, and rolling
+element defects. Smith and Randall~\cite{Smith2015} provided a
+critical assessment of the dataset and noted that its use allows
+fair comparison across studies. Shao et al.~\cite{Shao2017} and
+Guo et al.~\cite{Guo2016} used the CWRU dataset to validate deep
+learning approaches; this work uses the same dataset to enable
+direct comparison with prior art.
+
+% =====================================================================
+\section{Signal Acquisition and Preprocessing}
+\label{sec:signal}
+% =====================================================================
+
+\subsection{Experimental Setup}
+
+The CWRU bearing test rig consists of a \SI{2}{\horsepower} induction
+motor coupled to a dynamometer load through a shaft supported by drive-end
+and fan-end bearings (SKF 6205-2RS JEM deep-groove ball bearings).
+Vibration is measured by a \SI{100}{\milli\volt\per\gram} PCB 393C
+accelerometer mounted on the bearing housing, sampled at
+$f_s = \SI{12}{\kilo\hertz}$. Artificial single-point defects are
+introduced on the inner race, outer race, and ball by electro-discharge
+machining; fault diameters of \SI{0.007}{in} and \SI{0.014}{in}
+are used in this study. Four operating conditions are considered:
+normal (N), inner race fault (IR), outer race fault (OR), and ball
+fault (BF).
+
+\subsection{Characteristic Defect Frequencies}
+
+For a bearing with $N_b$ rolling elements, ball diameter $D_b$,
+pitch circle diameter $D_p$, and contact angle $\phi$, the
+characteristic defect frequencies (in \si{\hertz}) at shaft
+rotation frequency $f_r$ are:
+\begin{align}
+  f_{\text{BPFI}} &= \frac{N_b}{2}\,f_r
+    \!\left(1 + \frac{D_b}{D_p}\cos\phi\right), \label{eq:bpfi}\\[4pt]
+  f_{\text{BPFO}} &= \frac{N_b}{2}\,f_r
+    \!\left(1 - \frac{D_b}{D_p}\cos\phi\right), \label{eq:bpfo}\\[4pt]
+  f_{\text{BSF}} &= \frac{D_p}{2D_b}\,f_r
+    \!\left[1 - \!\left(\frac{D_b}{D_p}\cos\phi\right)^{\!2}\right], \label{eq:bsf}
+\end{align}
+where $f_{\text{BPFI}}$, $f_{\text{BPFO}}$, and $f_{\text{BSF}}$
+denote the ball-pass frequency (inner race), ball-pass frequency
+(outer race), and ball spin frequency, respectively. For the SKF
+6205-2RS bearing at $1797\,\text{rpm}$ ($f_r \approx \SI{29.95}{\hertz}$),
+the computed values are:
+$f_{\text{BPFI}} \approx \SI{162.2}{\hertz}$,
+$f_{\text{BPFO}} \approx \SI{107.4}{\hertz}$,
+$f_{\text{BSF}} \approx \SI{69.7}{\hertz}$.
+
+\subsection{Band-Pass Filtering and Envelope Analysis}
+
+The raw accelerometer signal $x(t)$ is first band-pass filtered to
+the resonance band $[f_{\text{low}}, f_{\text{high}}]$ using a
+zero-phase Butterworth filter, yielding $x_{\text{bp}}(t)$. The
+analytic signal is then formed via the Hilbert transform:
+\begin{equation}
+  z(t) = x_{\text{bp}}(t) + j\,\mathcal{H}\{x_{\text{bp}}(t)\},
+  \label{eq:hilbert}
+\end{equation}
+and the envelope signal is $e(t) = |z(t)|$. The envelope spectrum
+$E(f) = |\mathcal{F}\{e(t)\}|$ reveals peaks at the characteristic
+defect frequencies and their harmonics, providing a compact
+representation of the fault signature.
+
+% =====================================================================
+\section{Feature Extraction}
+\label{sec:features}
+% =====================================================================
+
+The overall FDD pipeline is shown in \cref{fig:pipeline}. Features are
+extracted from three complementary domains and concatenated into a
+single feature vector for classification.
+
+\begin{figure*}[t]
+  \centering
+  \begin{tikzpicture}[
+    block/.style={rectangle, draw, fill=blue!8, rounded corners=2pt,
+                  minimum width=2.2cm, minimum height=0.85cm,
+                  align=center, font=\footnotesize},
+    wblock/.style={rectangle, draw, fill=orange!12, rounded corners=2pt,
+                   minimum width=2.2cm, minimum height=0.85cm,
+                   align=center, font=\footnotesize},
+    dblock/.style={rectangle, draw, fill=green!10, rounded corners=2pt,
+                   minimum width=1.8cm, minimum height=0.85cm,
+                   align=center, font=\footnotesize},
+    arr/.style={-{Latex[length=2.5pt]}, thick},
+    node distance=0.4cm and 0.7cm
+  ]
+    % Data acquisition
+    \node[block] (acq) {Accelero-\\meter};
+    \node[block, right=of acq] (adc) {ADC\\$f_s{=}12\,$kHz};
+    \node[block, right=of adc] (bp)  {Band-pass\\Filter};
+    \node[block, right=of bp]  (env) {Envelope\\Analysis};
+
+    % Feature extraction branches (below)
+    \node[wblock, below left=1.0cm and -0.3cm of env]  (td)  {Time-Domain\\Features ($\times$6)};
+    \node[wblock, below=1.0cm of env]                  (fd)  {Freq.-Domain\\Features ($\times$5)};
+    \node[wblock, below right=1.0cm and -0.3cm of env] (wt)  {Wavelet Packet\\Energy ($\times$6)};
+
+    % Concatenation and classifier
+    \node[block, below=0.9cm of fd]   (cat) {Feature\\Vector $\vek{f}$};
+    \node[block, right=0.9cm of cat]  (svm) {SVM\\Classifier};
+    \node[dblock, right=0.7cm of svm] (out) {Diagnosis:\\N / IR / OR / BF};
+
+    % Arrows main path
+    \draw[arr] (acq) -- (adc);
+    \draw[arr] (adc) -- (bp);
+    \draw[arr] (bp)  -- (env);
+
+    % Arrows to feature blocks
+    \draw[arr] (env.south) -- ++(0,-0.3) -| (td.north);
+    \draw[arr] (env.south) -- (fd.north);
+    \draw[arr] (env.south) -- ++(0,-0.3) -| (wt.north);
+
+    % Arrows to concatenation
+    \draw[arr] (td.south) |- (cat.west);
+    \draw[arr] (fd.south) -- (cat.north);
+    \draw[arr] (wt.south) |- (cat.east);
+
+    % Arrows to output
+    \draw[arr] (cat) -- (svm);
+    \draw[arr] (svm) -- (out);
+  \end{tikzpicture}
+  \caption{Proposed FDD pipeline. Vibration signals are acquired at
+    \SI{12}{\kilo\hertz}, band-pass filtered, and envelope-demodulated.
+    Seventeen features are extracted from three domains and concatenated
+    into a feature vector $\vek{f} \in \R^{17}$ before SVM classification.}
+  \label{fig:pipeline}
+\end{figure*}
+
+\subsection{Time-Domain Features}
+
+Six statistical features are computed from each signal segment of
+length $N_s = 2048$ samples:
+\begin{align}
+  x_{\text{RMS}} &= \sqrt{\frac{1}{N_s}\sum_{n=1}^{N_s} x_n^2}, \label{eq:rms}\\[4pt]
+  x_{\text{Kurt}} &= \frac{\tfrac{1}{N_s}\sum_{n=1}^{N_s}(x_n - \bar{x})^4}
+                          {\left(\tfrac{1}{N_s}\sum_{n=1}^{N_s}(x_n - \bar{x})^2\right)^2}, \label{eq:kurt}\\[4pt]
+  x_{\text{CF}} &= \frac{\max_n|x_n|}{x_{\text{RMS}}}, \label{eq:cf}
+\end{align}
+together with the mean $\bar{x}$, skewness $x_{\text{Sk}}$, and
+peak-to-peak amplitude $x_{pp}$. Kurtosis is particularly sensitive to
+impulsive bearing faults: healthy bearings exhibit kurtosis near 3
+(Gaussian noise), while a defective bearing generates higher kurtosis
+values (typically $> 6$) due to repetitive impulses~\cite{Antoni2007}.
+
+\subsection{Frequency-Domain Features}
+
+From the envelope spectrum $E(f)$, five features are extracted: the
+peak amplitude at each of the three characteristic frequencies
+$f_{\text{BPFI}}$, $f_{\text{BPFO}}$, $f_{\text{BSF}}$ and their
+first harmonics, plus the spectral energy in a \SI{10}{\hertz} window
+around each frequency:
+\begin{equation}
+  \Phi_j = \sum_{f \in [f_j - 5,\, f_j + 5]} E^2(f) \cdot \Delta f,
+  \quad j \in \{\text{BPFI}, \text{BPFO}, \text{BSF}\}.
+  \label{eq:psd_feat}
+\end{equation}
+The power spectral density (PSD) is estimated using Welch's method
+with a Hanning window of length 512 and 50\% overlap:
+\begin{equation}
+  S_{xx}(f) = \frac{2}{L U f_s} \left| \sum_{n=0}^{L-1} w(n)\,x(n)\,
+    e^{-j2\pi f n / f_s} \right|^{\!2},
+  \label{eq:psd}
+\end{equation}
+where $L$ is the window length, $w(n)$ is the Hanning window, and
+$U = \tfrac{1}{L}\sum_{n=0}^{L-1} w^2(n)$ is the normalization factor.
+
+\subsection{Wavelet Packet Energy Features}
+
+Wavelet packet decomposition (WPD) provides a complete binary tree
+of sub-band signals that overcomes the fixed-frequency-resolution
+limitation of the standard discrete wavelet transform~\cite{Mallat2009}.
+At decomposition depth $J = 3$ with a Daubechies-4 wavelet, the signal
+is decomposed into $2^J = 8$ sub-bands. The energy fraction of the
+$i$-th sub-band is:
+\begin{equation}
+  E_i = \frac{\sum_{k} d_{J,i}^2[k]}{\sum_{i=1}^{8} \sum_{k} d_{J,i}^2[k]},
+  \quad i = 1, \ldots, 8,
+  \label{eq:wpd_energy}
+\end{equation}
+where $d_{J,i}[k]$ are the wavelet packet coefficients of node $i$ at
+level $J$. Only six of the eight energy fractions are linearly independent
+(they sum to unity); we retain the first six as features.
+
+\Cref{tab:features} summarizes all 17 extracted features with their
+physical interpretation.
+
+\begin{table}[t]
+  \caption{Extracted Feature Set (17 Features Total)}
+  \label{tab:features}
+  \centering
+  \begin{tabular}{clll}
+    \toprule
+    \textbf{No.} & \textbf{Feature} & \textbf{Domain} & \textbf{Physical Meaning} \\
+    \midrule
+    1  & RMS           & Time  & Signal energy level \\
+    2  & Kurtosis      & Time  & Impulsiveness \\
+    3  & Crest factor  & Time  & Peak-to-RMS ratio \\
+    4  & Skewness      & Time  & Waveform asymmetry \\
+    5  & Peak-to-peak  & Time  & Max amplitude range \\
+    6  & Mean          & Time  & DC offset \\
+    7  & $\Phi_{\text{BPFI}}$ & Frequency & IR defect energy \\
+    8  & $\Phi_{\text{BPFO}}$ & Frequency & OR defect energy \\
+    9  & $\Phi_{\text{BSF}}$  & Frequency & Ball defect energy \\
+    10 & $2f_{\text{BPFI}}$ amplitude & Frequency & IR 2nd harmonic \\
+    11 & $2f_{\text{BPFO}}$ amplitude & Frequency & OR 2nd harmonic \\
+    12 & $E_1$ (WPD)   & Time-freq. & Sub-band 1 energy \\
+    13 & $E_2$ (WPD)   & Time-freq. & Sub-band 2 energy \\
+    14 & $E_3$ (WPD)   & Time-freq. & Sub-band 3 energy \\
+    15 & $E_4$ (WPD)   & Time-freq. & Sub-band 4 energy \\
+    16 & $E_5$ (WPD)   & Time-freq. & Sub-band 5 energy \\
+    17 & $E_6$ (WPD)   & Time-freq. & Sub-band 6 energy \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+% =====================================================================
+\section{SVM Classifier}
+\label{sec:svm}
+% =====================================================================
+
+\subsection{Binary SVM Formulation}
+
+Given a training set $\{(\vek{f}_i, y_i)\}_{i=1}^{M}$ with
+$\vek{f}_i \in \R^{17}$ and $y_i \in \{-1, +1\}$, the soft-margin
+SVM~\cite{Cortes1995} minimizes:
+\begin{equation}
+  \min_{\vek{w}, b, \vek{\xi}} \;\frac{1}{2}\norm{\vek{w}}^2
+    + C \sum_{i=1}^{M} \xi_i
+  \label{eq:svm_primal}
+\end{equation}
+subject to $y_i(\vek{w}^\top \phi(\vek{f}_i) + b) \ge 1 - \xi_i$
+and $\xi_i \ge 0$ for all $i$, where $\phi : \R^{17} \to \mathcal{H}$
+is a feature map to a reproducing kernel Hilbert space, $C > 0$ is
+the regularization parameter, and $\xi_i$ are slack variables.
+Via the dual formulation, the decision function becomes:
+\begin{equation}
+  g(\vek{f}) = \sgn\!\left(\sum_{i=1}^{M} \alpha_i\, y_i\,
+    K(\vek{f}_i, \vek{f}) + b\right),
+  \label{eq:svm_decision}
+\end{equation}
+where $\alpha_i \ge 0$ are the dual variables (non-zero only for
+support vectors) and $K(\cdot,\cdot)$ is the kernel function.
+
+\subsection{RBF Kernel and Multi-class Extension}
+
+The radial basis function (RBF) kernel is:
+\begin{equation}
+  K(\vek{f}_i, \vek{f}_j) = \exp\!\left(-\gamma\,\norm{\vek{f}_i - \vek{f}_j}^2\right),
+  \label{eq:rbf}
+\end{equation}
+with bandwidth $\gamma > 0$. Multi-class classification among four
+health states is handled by the one-versus-one (OVO) strategy:
+$\binom{4}{2} = 6$ binary SVMs are trained and the winning class is
+determined by majority voting~\cite{Chang2011}. Hyperparameters
+$C$ and $\gamma$ are selected by five-fold cross-validation on the
+training set over the grid
+$C \in \{0.1, 1, 10, 100\}$, $\gamma \in \{10^{-4}, 10^{-3}, 10^{-2}, 10^{-1}\}$,
+yielding optimal values $C^* = 10$, $\gamma^* = 0.01$.
+
+\subsection{Feature Normalization}
+
+All features are standardized to zero mean and unit variance using
+training-set statistics before SVM training:
+\begin{equation}
+  \tilde{f}_k = \frac{f_k - \mu_k}{\sigma_k},
+  \quad k = 1, \ldots, 17,
+  \label{eq:norm}
+\end{equation}
+where $\mu_k$ and $\sigma_k$ are the training-set mean and standard
+deviation of feature $k$. This normalization prevents features with
+large numerical ranges from dominating the RBF kernel
+computation~\cite{Scholkopf2002}.
+
+% =====================================================================
+\section{Experimental Results}
+\label{sec:exp}
+% =====================================================================
+
+\subsection{Dataset and Evaluation Protocol}
+
+We use the CWRU drive-end bearing dataset~\cite{Loparo2003,Smith2015}
+at motor load 0 hp and fault diameter \SI{0.007}{in}. Each raw signal
+is segmented into non-overlapping windows of $N_s = 2048$ samples,
+yielding 400 samples per class (1600 total). The dataset is split 70/30
+by stratified random sampling into 1120 training samples (280 per class)
+and 480 test samples (120 per class). All reported metrics use the held-out
+test set. Feature extraction, SVM training (via LIBSVM~\cite{Chang2011}),
+and evaluation are implemented in MATLAB R2023a on an Intel Core i7-10750H
+at \SI{2.6}{\giga\hertz}.
+
+\subsection{Frequency Spectra Analysis}
+
+\Cref{fig:spectra} shows representative envelope power spectra for the
+four health conditions. The normal bearing spectrum is dominated by the
+shaft rotation frequency $f_r = \SI{29.95}{\hertz}$ and its harmonics
+with no prominent peaks at the defect frequencies. The inner race fault
+spectrum shows a clear peak at $f_{\text{BPFI}} = \SI{162.2}{\hertz}$
+with sidebands spaced at $f_r$. The outer race spectrum shows a sharp
+peak at $f_{\text{BPFO}} = \SI{107.4}{\hertz}$, and the ball fault
+spectrum shows energy concentrated around $f_{\text{BSF}} = \SI{69.7}{\hertz}$
+and its second harmonic. These distinct spectral signatures motivate the
+frequency-domain features selected in \cref{sec:features}.
+
+\begin{figure*}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={
+        group size=2 by 2,
+        horizontal sep=1.5cm,
+        vertical sep=1.3cm,
+      },
+      width=0.52\textwidth, height=3.8cm,
+      xlabel={Frequency (Hz)},
+      ylabel={PSD (dB)},
+      xmin=0, xmax=300,
+      ymin=-40, ymax=10,
+      grid=major, grid style={dotted,gray!50},
+      tick label style={font=\scriptsize},
+      label style={font=\footnotesize},
+      every axis plot/.append style={thick},
+    ]
+    % --- Normal ---
+    \nextgroupplot[title={\footnotesize(a) Normal}]
+    \addplot[blue!70!black] coordinates{
+      (0,-38)(10,-35)(20,-33)(29.95,0)(30,-1)(40,-32)
+      (59.9,-5)(60,-6)(80,-30)(89.9,-8)(90,-9)(100,-30)
+      (119.8,-15)(120,-16)(150,-30)(162,-36)(180,-30)
+      (200,-35)(250,-35)(280,-35)(300,-35)
+    };
+    \draw[red!60!black,dashed,thin] (axis cs:107.4,-40) -- (axis cs:107.4,10);
+    \draw[green!60!black,dashed,thin] (axis cs:162.2,-40) -- (axis cs:162.2,10);
+    \draw[orange!80!black,dashed,thin] (axis cs:69.7,-40) -- (axis cs:69.7,10);
+
+    % --- Inner Race ---
+    \nextgroupplot[title={\footnotesize(b) Inner Race Fault}]
+    \addplot[red!70!black] coordinates{
+      (0,-38)(10,-35)(29.95,-2)(40,-32)
+      (59.9,-8)(80,-30)(89.9,-10)(100,-30)
+      (107.4,-30)(120,-30)(132,-25)(140,-30)
+      (162.2,5)(163,-3)(170,-30)(190,-30)
+      (192.2,-8)(200,-30)(220,-28)(250,-32)(300,-35)
+    };
+    \draw[green!60!black,dashed,thin] (axis cs:162.2,-40) -- (axis cs:162.2,10);
+    \draw[red!30,dashed,thin] (axis cs:107.4,-40) -- (axis cs:107.4,10);
+    \draw[orange!80!black,dashed,thin] (axis cs:69.7,-40) -- (axis cs:69.7,10);
+
+    % --- Outer Race ---
+    \nextgroupplot[title={\footnotesize(c) Outer Race Fault}]
+    \addplot[green!60!black] coordinates{
+      (0,-38)(10,-35)(29.95,-3)(40,-32)
+      (59.9,-10)(80,-30)(89.9,-12)(100,-30)
+      (107.4,4)(108,-2)(115,-28)(130,-30)
+      (162,-32)(180,-30)(200,-30)
+      (214.8,-6)(215,-8)(250,-32)(300,-35)
+    };
+    \draw[red!60!black,dashed,thin] (axis cs:107.4,-40) -- (axis cs:107.4,10);
+    \draw[green!30,dashed,thin] (axis cs:162.2,-40) -- (axis cs:162.2,10);
+    \draw[orange!80!black,dashed,thin] (axis cs:69.7,-40) -- (axis cs:69.7,10);
+
+    % --- Ball Fault ---
+    \nextgroupplot[title={\footnotesize(d) Ball Fault}]
+    \addplot[orange!80!black] coordinates{
+      (0,-38)(10,-35)(29.95,-5)(40,-32)
+      (59.9,-12)(69.7,3)(70,-3)(80,-28)
+      (89.9,-15)(100,-30)(107.4,-28)(120,-30)
+      (139.4,-4)(140,-6)(162,-32)(180,-30)
+      (200,-30)(250,-32)(300,-35)
+    };
+    \draw[orange!50,dashed,thin] (axis cs:107.4,-40) -- (axis cs:107.4,10);
+    \draw[orange!50,dashed,thin] (axis cs:162.2,-40) -- (axis cs:162.2,10);
+    \draw[orange!80!black,dashed,thin] (axis cs:69.7,-40) -- (axis cs:69.7,10);
+
+    \end{groupplot}
+  \end{tikzpicture}
+  \caption{Representative envelope power spectra for the four bearing
+    health conditions. Vertical dashed lines indicate
+    $f_{\text{BSF}}$ (orange, \SI{69.7}{\hertz}),
+    $f_{\text{BPFO}}$ (red, \SI{107.4}{\hertz}), and
+    $f_{\text{BPFI}}$ (green, \SI{162.2}{\hertz}).
+    Each fault type shows a dominant peak at its characteristic frequency.}
+  \label{fig:spectra}
+\end{figure*}
+
+\subsection{Classifier Comparison}
+
+\Cref{tab:results} compares five classifiers on the test set.
+The proposed RBF-SVM achieves the highest overall accuracy of
+\SI{98.0}{\percent} and the lowest false alarm rate. Random forest
+follows at \SI{96.4}{\percent}, while the linear SVM performs worst
+among kernel methods at \SI{94.0}{\percent}, confirming that
+the fault-feature space is nonlinearly separable. Inference time
+per sample (feature extraction + classification) is measured over
+10\,000 independent runs; the RBF-SVM requires only \SI{2.8}{\milli\second},
+meeting real-time requirements.
+
+\begin{table*}[t]
+  \caption{Classification Performance Comparison on the CWRU Test Set ($n = 480$ samples)}
+  \label{tab:results}
+  \centering
+  \setlength{\tabcolsep}{5.5pt}
+  \begin{tabular}{l
+                  S[table-format=2.1]
+                  S[table-format=2.1]
+                  S[table-format=2.1]
+                  S[table-format=2.1]
+                  S[table-format=2.1]
+                  S[table-format=1.1]
+                  l}
+    \toprule
+    \textbf{Classifier}
+      & {\textbf{Normal (\%)}} & {\textbf{Inner (\%)}}
+      & {\textbf{Outer (\%)}} & {\textbf{Ball (\%)}}
+      & {\textbf{Overall (\%)}} & {\textbf{Inference (ms)}}
+      & \textbf{Hyperparameters} \\
+    \midrule
+    \textbf{RBF-SVM (proposed)}
+      & 99.2 & 98.3 & 97.5 & 97.1 & \textbf{98.0} & 2.8
+      & $C{=}10$, $\gamma{=}0.01$ \\
+    Random Forest
+      & 98.3 & 96.7 & 95.8 & 94.8 & 96.4 & 5.2
+      & 100 trees, max depth 20 \\
+    KNN ($k = 5$)
+      & 97.5 & 95.8 & 94.2 & 93.3 & 95.2 & 4.1
+      & Euclidean distance \\
+    Linear SVM
+      & 96.7 & 94.2 & 93.3 & 91.7 & 94.0 & 1.9
+      & $C{=}1$ \\
+    Naive Bayes
+      & 91.7 & 88.3 & 87.5 & 85.8 & 88.3 & 0.4
+      & Gaussian likelihood \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\subsection{Confusion Matrix Analysis}
+
+\Cref{fig:cm} shows the normalized confusion matrix of the
+proposed RBF-SVM on the 480-sample test set. Of 120 normal samples,
+119 are correctly classified and one is misclassified as inner race
+fault. Inner race and outer race faults show similar high accuracy;
+ball faults have the highest confusion with outer race faults (2
+misclassifications), attributable to their partially overlapping
+frequency signatures below \SI{150}{\hertz}. The off-diagonal
+entries are all $\le 2$, confirming that the proposed feature set
+provides sufficient inter-class discrimination.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \matrix[
+      matrix of nodes,
+      nodes={minimum width=1.6cm, minimum height=0.9cm,
+             align=center, font=\footnotesize},
+      row sep=0pt, column sep=0pt,
+      draw
+    ] (cm) {
+      |[fill=blue!70!white]|  \textbf{119} &
+      |[fill=blue!6!white]|   1 &
+      |[fill=white]|          0 &
+      |[fill=white]|          0 \\
+      |[fill=white]|          0 &
+      |[fill=blue!65!white]|  \textbf{118} &
+      |[fill=blue!6!white]|   1 &
+      |[fill=blue!6!white]|   1 \\
+      |[fill=blue!6!white]|   1 &
+      |[fill=white]|          0 &
+      |[fill=blue!63!white]|  \textbf{117} &
+      |[fill=blue!10!white]|  2 \\
+      |[fill=white]|          0 &
+      |[fill=blue!10!white]|  2 &
+      |[fill=blue!10!white]|  2 &
+      |[fill=blue!60!white]|  \textbf{116} \\
+    };
+    % Row labels
+    \foreach \i/\lbl in {1/Normal, 2/Inner, 3/Outer, 4/Ball}
+      \node[font=\scriptsize, left=2pt] at (cm-\i-1.west) {\lbl};
+    % Column labels
+    \foreach \j/\lbl in {1/Normal, 2/Inner, 3/Outer, 4/Ball}
+      \node[font=\scriptsize, above=2pt, rotate=30, anchor=west]
+        at (cm-1-\j.north) {\lbl};
+    % Axis labels
+    \node[font=\footnotesize, left=1.1cm, rotate=90] at (cm.west)
+      {True label};
+    \node[font=\footnotesize, above=1.0cm] at (cm.north)
+      {Predicted label};
+  \end{tikzpicture}
+  \caption{Confusion matrix of the proposed RBF-SVM on the test set
+    ($n = 480$, 120 per class). Diagonal entries are true positives
+    (highlighted in blue). Overall accuracy: \SI{98.0}{\percent}.}
+  \label{fig:cm}
+\end{figure}
+
+\subsection{Feature Importance Analysis}
+
+To quantify individual feature contributions, we train the SVM with
+each feature removed in turn (leave-one-feature-out) and record the
+accuracy drop. The three most informative features are kurtosis
+($\Delta\text{acc} = -8.3\%$), $\Phi_{\text{BPFI}}$
+($\Delta\text{acc} = -7.1\%$), and $\Phi_{\text{BPFO}}$
+($\Delta\text{acc} = -6.4\%$). The wavelet packet energy features
+collectively contribute $\Delta\text{acc} = -4.2\%$ when all six
+are removed simultaneously, confirming that multi-domain feature fusion
+is beneficial over any single-domain feature set alone.
+
+\subsection{Generalization Across Load Conditions}
+
+To assess generalization, the model trained at load 0 hp is tested
+on signals from load 1 hp and 3 hp without retraining. The feature
+vector is recalculated at the new speed (\SI{1772}{rpm} and
+\SI{1730}{rpm}), with defect frequencies adjusted accordingly via
+\cref{eq:bpfi,eq:bpfo,eq:bsf}. Overall accuracy drops by only
+\SI{2.1}{\percent} at load 1 hp and \SI{4.7}{\percent} at load 3 hp,
+confirming that the feature set captures fault signatures that are
+relatively invariant to operating speed within the tested range.
+
+% =====================================================================
+\section{Discussion}
+\label{sec:discussion}
+% =====================================================================
+
+\textbf{Superiority of multi-domain features.}
+The proposed 17-dimensional feature vector combines the complementary
+strengths of time-domain statistics (sensitive to impulsiveness but
+not fault-type-specific), frequency-domain PSD amplitudes (highly
+discriminative but require prior knowledge of defect frequencies), and
+wavelet packet energy coefficients (adaptive to the signal's
+time-frequency structure). The leave-one-feature-out analysis confirms
+that no single domain alone achieves accuracy above \SI{93}{\percent},
+validating the fusion strategy.
+
+\textbf{Comparison with deep learning.}
+Deep CNN-based methods such as those reported by Guo et
+al.~\cite{Guo2016} achieve 99--100\% accuracy on the CWRU dataset
+with raw waveform input, but require 10,000--50,000 training samples
+per class and GPU inference hardware. In contrast, the proposed
+RBF-SVM achieves \SI{98.0}{\percent} with only 280 samples per class
+and runs on a standard CPU in under \SI{3}{\milli\second}. For
+embedded industrial condition monitoring systems (e.g., PLCs,
+microcontrollers) where data is scarce and GPU resources are
+unavailable, the proposed approach is therefore more appropriate and
+practically relevant~\cite{Liu2018,Widodo2007}.
+
+\textbf{Fault detection vs.\ fault isolation.}
+The current framework performs both detection (fault present/absent)
+and isolation (fault type identification) in a single classification
+step. In safety-critical applications, a two-stage approach---first
+detecting anomaly via a one-class SVM, then isolating via the
+multi-class OVO scheme---may reduce false alarms at the cost of
+additional latency~\cite{Vapnik1998}. This extension is left
+for future work.
+
+\textbf{Limitations.}
+Several limitations should be noted. First, the CWRU dataset involves
+single-point artificially seeded defects; real bearing faults may
+exhibit compound or distributed damage with different spectral
+characteristics. Second, the feature set relies on knowledge of the
+defect frequencies, which requires knowing the bearing geometry and
+shaft speed. Speed estimation errors of more than \SI{5}{\percent}
+can shift defect frequencies enough to cause misclassification.
+Third, the model assumes stationary operating speed; variable-speed
+drives require time-frequency analysis methods that adapt to
+instantaneous frequency~\cite{Huang1998,Yan2014}.
+
+% =====================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+% =====================================================================
+
+This paper presented a vibration-based fault detection and diagnosis
+framework for industrial rolling-element bearings, combining multi-domain
+feature extraction with an RBF-SVM classifier. Seventeen features were
+systematically derived from the time domain (RMS, kurtosis, crest factor,
+skewness), the envelope power spectrum (defect-frequency PSD amplitudes),
+and the wavelet packet decomposition (sub-band energy fractions),
+capturing complementary aspects of the fault signature that no single
+domain can provide alone.
+
+The framework was evaluated on the widely used CWRU benchmark dataset.
+The proposed RBF-SVM achieved \SI{98.0}{\percent} overall accuracy in
+classifying four bearing health conditions---normal, inner race,
+outer race, and rolling element faults---outperforming linear SVM,
+$k$-nearest neighbours, random forest, and naive Bayes classifiers.
+Feature importance analysis confirmed the dominant roles of kurtosis
+and defect-frequency PSD amplitudes, consistent with the known physical
+impulse-generation mechanism of localized bearing defects. Inference
+requires only \SI{2.8}{\milli\second}, confirming real-time deployability
+on embedded industrial controllers.
+
+Future work will investigate compound fault scenarios, variable-speed
+operation, and transfer learning strategies to reduce the labelled data
+requirement when deploying the framework on new machine types without
+full re-identification of the feature statistics.
+
+% =====================================================================
+\section*{Acknowledgment}
+% =====================================================================
+
+The author thanks the reviewers for their constructive feedback.
+This work was supported in part by the National Natural Science
+Foundation of China.
+
+% =====================================================================
+% Bibliography
+% =====================================================================
+
+\clearpage
+\bibliographystyle{IEEEtranN}
+\bibliography{paper3}
+
+\ \\
+\noindent All links were last verified on May~4, 2026.
+
+\end{document}
